@@ -13,6 +13,7 @@ lineLength= 1800                            # line unstretched length [m]
 typeName  = "chain"                         # identifier string for the line type
 # typeName options: "chain", "chain_studlink", "hmpe", "nylon", "polyester", "wire"
 
+
 # ----- set up the mooring system and floating body -----
 
 # Create new MoorPy System and set its depth
