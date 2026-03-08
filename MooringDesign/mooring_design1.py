@@ -92,6 +92,7 @@ if show_small_body_axes:
 ms.unload("mooring_design.txt")                                     # export to MD input file
 
 ms.bodyList[0].f6Ext = np.array([2e2, 0, 0, 0, 0, 0])       # apply an external force on the body
+#                              Fx, Fy, Fz, Mx, My, Mz
 ms.solveEquilibrium()                                       # equilibrate
 fig, ax = ms.plot(ax=ax, color='red', draw_body=False)      # plot displaced config without default body axes
 
