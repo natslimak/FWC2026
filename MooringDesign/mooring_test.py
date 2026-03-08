@@ -11,7 +11,7 @@ zFair     = -21                             # fairlead z elevation [m]
 rFair     = 20                              # fairlead radius [m]
 lineLength= 1800                            # line unstretched length [m]
 typeName  = "chain"                         # identifier string for the line type
-
+# typeName options: "chain", "chain_studlink", "hmpe", "nylon", "polyester", "wire"
 
 # ----- set up the mooring system and floating body -----
 
@@ -47,3 +47,35 @@ ms.unload("sample.txt")                                     # export to MD input
 ms.bodyList[0].f6Ext = np.array([3e6, 0, 0, 0, 0, 0])       # apply an external force on the body
 ms.solveEquilibrium()                                       # equilibrate
 fig, ax = ms.plot(ax=ax, color='red')                       # plot the system in displaced configuration (on the same plot, in red)
+
+
+
+""" Getting the line properties database:"""
+
+import moorpy
+import moorpy.helpers as mh
+from pathlib import Path
+import inspect
+
+print("MoorPy version:", getattr(moorpy, "__version__", "unknown"))
+
+# 1) Preferred: list types from the default DB
+if hasattr(mh, "loadLineProps"):
+    db = mh.loadLineProps(source="default")
+    print("\nTypes/materials in source='default':")
+    for k in sorted(db.keys()):
+        print(" -", k)
+else:
+    print("\nloadLineProps() not found in this MoorPy version.")
+
+# 2) Show where DB files live in your installed package
+pkg_dir = Path(moorpy.__file__).resolve().parent
+print("\nPossible line-property files in package:")
+for p in sorted(pkg_dir.rglob("*")):
+    if p.suffix.lower() in {".txt", ".csv", ".yaml", ".yml", ".json"}:
+        name = p.name.lower()
+        if "line" in name or "prop" in name or "rope" in name or "chain" in name:
+            print(" -", p)
+
+# 3) If needed, inspect getLineProps implementation directly
+print("\ngetLineProps signature:", inspect.signature(mh.getLineProps))
