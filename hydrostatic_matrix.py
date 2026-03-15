@@ -54,8 +54,6 @@ zmoor = -70         # Mooring fairlead [m]
 #Cm = 1.0            # Added mass coefficient
 #Cd = 0.6            # Drag coefficient
 
-
-####################### CALCULATION #################################################
  
 #%% Calculate the draft 
 
@@ -77,6 +75,18 @@ print(f'The draft is {draft} m ')
 
 h_out =  (h_bf +  h_bb) - draft  # height of the floater outside water
 
+#%% Determine positions of columns based on centroid. The x axis is pointing
+#   from the front floater to the ones in the back, in the direction of the
+#   wind. The y axis follows the right hand rule.    
+
+# The back floaters are N° 1 and N° 2, while the front is N°3
+y_1 = - edge / 2
+y_2 = + edge / 2
+y_3 = 0
+x_1 = + edge / 3
+x_2 = y_1
+x_3 =  - 2 * edge / 3
+
 #%% Calculate center of mass coordinates
 
 z_CM_tow = (z_hub / 2 + h_out) # z center of mass tower
@@ -92,25 +102,6 @@ z_CM_tot = (2 * z_CM_tow * mt + 2 * (z_hub + h_out) * (mr + mn) + 2 * z_CM_bf * 
 
 print(f'The center of mass is at {z_CM_tot} m')
 
-#%% Calculate center of bouyancy
-
-z_CB_tot = - draft / 2
-
-print(f'The center of bouyancy is at {z_CB_tot} m')
-
-#%% Determine positions of columns based on centroid
-
-x_centroid = 0
-y_centroid = 0
-
-# The back floaters are N° 1 and N° 2, while the front is N°3
-x_1 = - edge / 2
-x_2 = edge / 2
-x_3 = 0
-y_1 = - edge / 3
-y_2 = y_1
-y_3 = 2 * edge / 3
-
 # center of mass around y
 x_CM_tot = ((mr + mn + mt + m_bf + m_bb) * x_1 + (mr + mn + mt + m_bf + m_bb) * x_2\
             + (m_ff + m_fb) *x_3) / m_tot
@@ -122,6 +113,27 @@ y_CM_tot = ((mr + mn + mt + m_bf + m_bb) * y_1 + (mr + mn + mt + m_bf + m_bb) * 
             + (m_ff + m_fb) *y_3) / m_tot
 
 print(f'The center of mass around x is at {y_CM_tot} m')
+
+#%% Calculate center of bouyancy coordinates
+
+z_CB_tot = - draft / 2
+
+print(f'The center of bouyancy is at {z_CB_tot} m')
+
+Vol_1_sub = draft * A_back
+Vol_2_sub = draft * A_back
+Vol_3_sub = draft * A_front
+
+x_CB_tot = (Vol_1_sub * x_1 + Vol_2_sub * x_2 + Vol_3_sub * x_3) /\
+                    (Vol_1_sub + Vol_2_sub + Vol_3_sub)
+                    
+print(f'The center of bouyancy around y is at {x_CB_tot} m')
+                    
+y_CB_tot = (Vol_1_sub * y_1 + Vol_2_sub * y_2 + Vol_3_sub * y_3) /\
+                    (Vol_1_sub + Vol_2_sub + Vol_3_sub)
+
+print(f'The center of bouyancy around x is at {y_CB_tot} m')
+
 #%% Hydrostatic restoring matrix
 # surge
 C_11 = 0
@@ -131,12 +143,11 @@ C_22 = 2 * rhow * g * A_back + rhow * g * A_front
 
 # pitch
 I_wp = rhow * g * (2 * np.pi * D_b**2 / 64 + np.pi * D_f**2 / 64 +\
-                    2 * np.pi * D_b**2 / 4 * x_1**2 +\
-                        np.pi * D_f**2 / 4 * x_3**2)
-
-# yaw
+                    2 * A_back * x_1**2 +\
+                        A_front * x_3**2)
 C_33 = m_tot * g * (z_CB_tot - z_CM_tot) + I_wp
 
+# yaw
 C_44 = 0
 
 C_hydro = np.array([[C_11, 0, 0, 0],
