@@ -137,20 +137,38 @@ print(f'The center of bouyancy around x is at {y_CB_tot} m')
 #%% Hydrostatic restoring matrix
 # surge
 C_11 = 0
+C_12 = 0
+C_13 = 0
+C_14= 0
 
 # heave
+C_21 = 0
 C_22 = 2 * rhow * g * A_back + rhow * g * A_front
 
+I_x = rhow * g * (2 * A_back * x_1 +  A_front * x_3)
+C_23 = I_x
+
+C_24 = 0
+
 # pitch
-I_wp = rhow * g * (2 * np.pi * D_b**2 / 64 + np.pi * D_f**2 / 64 +\
+C_31 = 0
+C_32 = C_23
+
+I_xx = rhow * g * (2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
                     2 * A_back * x_1**2 +\
                         A_front * x_3**2)
-C_33 = m_tot * g * (z_CB_tot - z_CM_tot) + I_wp
+C_33 = m_tot * g * (z_CB_tot - z_CM_tot) + I_xx
+
+C_34 = 0
 
 # yaw
+C_41 = 0
+C_42 = 0
+C_43 = - m_tot * g * (y_CB_tot - y_CM_tot)
 C_44 = 0
 
-C_hydro = np.array([[C_11, 0, 0, 0],
-                    [0, C_22, 0, 0],
-                    [0, 0, C_33, 0],
-                    [0, 0, 0, C_44]])
+
+C_hydro = np.array([[C_11, C_21, C_31, C_41],
+                    [C_12, C_22, C_32, C_42],
+                    [C_13, C_23, C_33, C_43],
+                    [C_14, C_24, C_34, C_44]])
