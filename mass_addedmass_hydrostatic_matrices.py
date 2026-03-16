@@ -5,6 +5,7 @@ to better understand the imput mesurement you can refer to the README file'''
 
 from scipy.linalg import eig
 import numpy as np
+import sys
 
 ## ambient parameters
 
@@ -15,7 +16,7 @@ rhoa = 1.29         # Air density [kg/m^3]
 
 # tower and rotor parameter
 mt = 3              # Tower mass [kg]
-z_hub = 0.8         # tower length [m]
+z_hub = 1.2         # tower length [m]
 
 Drot = 1            # Rotor diameter [m]
 Vrated = 11.4       # Rated wind speed [m/s]
@@ -34,11 +35,6 @@ D_b = 0.5           # Back floater Diameter [m]
 D_f = 0.6           # Front floater Diameter [m]
 
 m_bb = 8            # Back Ballast mass [kg]
-m_fb = 20            # Front Ballast mass [kg]
-
-h_bb = 0.5             # Back Ballast height [m]
-h_fb = 0.5             # Front Ballast height [m] 
-
 
 edge = 1           # distance between columns: equi lateral triangle
 
@@ -47,47 +43,74 @@ edge = 1           # distance between columns: equi lateral triangle
 Kmoor = 12          # Mooring stiffness [N/m]
 zmoor = -70         # Mooring fairlead [m]
 
-#others
+rho_ballast = 1025         # Ballast density [kg/m^3]
 
-#Cm = 1.0            # Added mass coefficient
-#Cd = 0.6            # Drag coefficient
 
+# Calculate the draft 
+
+m_back = 2* (mt + mn + mr + m_bb + m_bf)   # Back side mass [kg] 
  
-#%% Calculate the draft 
+A_back_floater = 2 * np.pi * D_b**2 /4 # Total area back floater [m^2]
+A_back_single_floater = np.pi * D_b**2 /4
 
-m_back =  2 * (mt + mn + mr + m_bb + m_bf)   # Back side mass [kg] 
+draft = m_back / (A_back_floater*rhow) #draft [m]
 
-m_front = m_fb + m_ff                        # Front side mass [kg] 
 
-m_tot = m_back + m_front                     # Total mass
+if draft >= h_bf: 
 
-A_back = np.pi * D_b**2 / 4                  # Sectional area back cylinders [m^2]
+    sys.exit('WE ARE SINKING :(')
 
-A_front = np.pi * D_f**2 / 4                 # Sectional area front cylinder [m^2]
+else:
+    print ('WE ARE FLOATING :)')
+    print ('The draft with', m_bb,'kg of ballast in the back is',draft,'m')
+    
 
-A_total = 2 * A_back + A_front               # total sectional area [m^2]
 
-draft = m_tot / (A_total*rhow) #draft [m]    # draft [m]
 
-print(f'The draft is {draft} m ')
+A_front_floater =  np.pi * D_f**2 /4
 
-h_out =  (h_bf +  h_bb) - draft              # height of the floater outside water
+m_front = (rhow * A_front_floater * draft) 
+
+m_fb = m_front - m_ff
+
+print ('We need',m_fb ,'kg of ballast in front')
+
+m_tot = m_back + m_front
+
+print('Total weigth of the structure is', m_tot, 'kg')
+
+
+#calculate the hight of the tower and the ballast
+
+h_t = z_hub-(h_bf-draft) # Tower hight [m]
+h_bb = m_bb/(rho_ballast* np.pi * D_b**2 /4) # back balast hight [m]
+h_fb = m_fb/(rho_ballast* np.pi * D_f**2 /4) # back balast hight [m]
+
+if  h_fb >= draft: 
+
+    sys.exit('We need an heavier weigth')
+
+print ('The tower shold be',h_t,'m')
+
+
+h_out =  h_bf - draft              # height of the floater outside water (height of the ballast is included in height of the floater)
 
 #%% Determine positions of columns based on centroid. The x axis is pointing
 #   from the front floater to the ones in the back, in the direction of the
 #   wind. The y axis follows the right hand rule.    
 
+
 # The back floaters are N° 1 and N° 2, while the front is N°3
 y_1 = - edge / 2
 y_2 = + edge / 2
 y_3 = 0
-x_1 = + edge / 3
-x_2 = x_1
-x_3 =  - 2 * edge / 3
+x_1 = 0
+x_2 = 0
+x_3 =  np.sqrt(3)*edge/2
 
 #%% Calculate center of mass coordinates
 
-z_CM_tow = (z_hub / 2 + h_out)        # z center of mass tower
+z_CM_tow = (h_t / 2) + h_out        # z center of mass tower
 
 z_CM_bf = h_out - h_bf / 2            # z center of back floater
 z_CM_ff = h_out - h_bf / 2            # z center of front floater
@@ -126,9 +149,9 @@ z_CB_tot = - draft / 2
 
 print(f'The center of bouyancy is at {z_CB_tot} m')
 
-Vol_1_sub = draft * A_back
-Vol_2_sub = draft * A_back
-Vol_3_sub = draft * A_front
+Vol_1_sub = draft * A_back_single_floater
+Vol_2_sub = draft * A_back_single_floater
+Vol_3_sub = draft * A_front_floater
 
 # x position of center of mass
 x_CB_tot = (Vol_1_sub * x_1 + Vol_2_sub * x_2 + Vol_3_sub * x_3) /\
@@ -151,9 +174,9 @@ C_14= 0        # surge-yaw
 
 # heave
 C_21 = 0       # heave-surge
-C_22 = 2 * rhow * g * A_back + rhow * g * A_front   # heave-heave
+C_22 = 2 * rhow * g * A_back_single_floater + rhow * g * A_front_floater   # heave-heave
 
-I_x = -rhow * g * (2 * A_back * x_1 +  A_front * x_3)
+I_x = -rhow * g * (2 * A_back_single_floater * x_1 +  A_front_floater * x_3)
 C_23 = I_x     # heave-pitch
 C_24 = 0       # heave-yaw
 
@@ -162,8 +185,8 @@ C_31 = 0       # pitch-surge
 C_32 = C_23    # pitch-heave
 
 I_xx = rhow * g * (2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
-                    2 * A_back * x_1**2 +\
-                        A_front * x_3**2)
+                    2 * A_back_single_floater * x_1**2 +\
+                        A_front_floater * x_3**2)
 C_33 = m_tot * g * (z_CB_tot - z_CM_tot) + I_xx   # pitch-pitch
 C_34 = 0       # pitch-yaw
   
