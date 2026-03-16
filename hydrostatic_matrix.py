@@ -82,7 +82,7 @@ y_1 = - edge / 2
 y_2 = + edge / 2
 y_3 = 0
 x_1 = + edge / 3
-x_2 = y_1
+x_2 = x_1
 x_3 =  - 2 * edge / 3
 
 #%% Calculate center of mass coordinates
@@ -147,7 +147,7 @@ C_14= 0        # surge-yaw
 C_21 = 0       # heave-surge
 C_22 = 2 * rhow * g * A_back + rhow * g * A_front   # heave-heave
 
-I_x = rhow * g * (2 * A_back * x_1 +  A_front * x_3)
+I_x = -rhow * g * (2 * A_back * x_1 +  A_front * x_3)
 C_23 = I_x     # heave-pitch
 C_24 = 0       # heave-yaw
 

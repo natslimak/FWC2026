@@ -82,7 +82,7 @@ y_1 = - edge / 2
 y_2 = + edge / 2
 y_3 = 0
 x_1 = + edge / 3
-x_2 = y_1
+x_2 = x_1
 x_3 =  - 2 * edge / 3
 
 #%% Calculate center of mass coordinates
