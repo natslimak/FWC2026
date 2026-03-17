@@ -17,22 +17,23 @@ rhoa = 1.29         # Air density [kg/m^3]
 # tower and rotor parameter
 mt = 3              # Tower mass [kg]
 z_hub = 1.2         # tower length [m]
+D_t = 0.1           # tower diameter [m]
 
 Drot = 1            # Rotor diameter [m]
 Vrated = 11.4       # Rated wind speed [m/s]
 Trated = 900        # Thrust at rated [N]
 
-mn = 3          # Nacelle mass [kg]
+mn = 5.5          # Nacelle mass [kg]
 mr = 1            # Rotor mass [kg]
 
 # floater parameters
 
-m_bf = 5          # Back Floater mass [kg]
-m_ff = 5            # Front Floater mass [kg]
+m_bf = 1          # Back Floater mass [kg]
+m_ff = 1            # Front Floater mass [kg]
 h_bf = 1            # Back floater hight [m]
 h_ff = 1            # Front floater hight [m] 
-D_b = 0.5           # Back floater Diameter [m]
-D_f = 0.6           # Front floater Diameter [m]
+D_b = 0.2           # Back floater Diameter [m]
+D_f = 0.2           # Front floater Diameter [m]
 
 m_bb = 8            # Back Ballast mass [kg]
 
@@ -204,32 +205,104 @@ C_hydro = np.array([[C_11, C_21, C_31, C_41],
 
 
 # Mass matrix calculation
-I0turb = (mn+mr)*z_hub**2
-I0tower =  mt * z_CM_tow**2
-I0float =  m_ff * z_CM_ff**2 + 2 * m_bf * z_CM_bf**2
+#-----------------------------------------------
+# All six degree of freedom
+#-----------------------------------------------
 
-IOtot = I0float + I0tower + I0turb
+#Inertia moment
+#-----------------------------------------------
+# Calculate all the componentsin the CM and transport it 
+#  to the middle point of the back side(floating point)
+#-----------------------------------------------
+I0_XX_turb = 0 
+I0_YY_turb = (mn+mr)*(edge/2)**2 
+I0_ZZ_turb = (mn+mr)*z_hub**2
+
+I0_XX_tower = mt*(3*(D_t/2)**2+ h_t**2)/12
+I0_YY_tower = mt*(3*(D_t/2)**2+ h_t**2)/12 + mt * (edge/2)**2
+I0_ZZ_tower = 0.5 *mt*(D_t/2)**2+ mt * z_CM_tow**2 
+
+I0_XX_backfloat =  m_bf*(3*(D_b/2)**2+ h_bf**2)/12 
+I0_YY_backfloat =  m_bf*(3*(D_b/2)**2+ h_bf**2)/12 + m_bf * (edge/2)**2
+I0_ZZ_backfloat = 0.5 *m_bf*(D_b/2)**2+ m_bf * z_CM_bf**2 
+
+I0_XX_backBallast =  m_bb*(3*(D_b/2)**2+ h_bb**2)/12 
+I0_YY_backBallast =  m_bb*(3*(D_b/2)**2+ h_bb**2)/12 + m_bb * (edge/2)**2
+I0_ZZ_backBallast = 0.5 *m_bb*(D_b/2)**2+ m_bb * z_CM_bb**2 
+
+I0_XX_frontfloat =  m_ff*(3*(D_f/2)**2+ h_ff**2)/12 + m_ff * (np.sqrt(3)*edge/2)**2
+I0_YY_frontfloat =  m_ff*(3*(D_f/2)**2+ h_ff**2)/12 
+I0_ZZ_frontfloat = 0.5 *m_ff*(D_f/2)**2+ m_ff * z_CM_ff**2 
+
+I0_XX_frontBallast =  m_fb*(3*(D_f/2)**2+ h_fb**2)/12 + m_fb * (np.sqrt(3)*edge/2)**2
+I0_YY_frontBallast =  m_fb*(3*(D_f/2)**2+ h_fb**2)/12 
+I0_ZZ_frontBallast = 0.5 *m_fb*(D_f/2)**2+ m_fb * z_CM_fb**2 
+
+#-----------------------------------------------
+# Sum all the inertia components 
+#  Note: all the back components are doubled here
+#-----------------------------------------------
+
+I0_XX = 2*(I0_XX_turb + I0_XX_backBallast + I0_XX_backfloat + I0_XX_tower) +I0_XX_frontfloat + I0_XX_frontBallast 
+I0_YY = 2*(I0_YY_turb + I0_YY_backBallast + I0_YY_backfloat + I0_YY_tower) +I0_YY_frontfloat + I0_YY_frontBallast 
+I0_ZZ = 2*(I0_ZZ_turb + I0_ZZ_backBallast + I0_ZZ_backfloat + I0_ZZ_tower) +I0_ZZ_frontfloat + I0_ZZ_frontBallast 
+
+
+#-----------------------------------------------
+# Assemble the M matrice
+#  Note: M is simmetrical
+#-----------------------------------------------
+
 M11 = m_tot # surge-surge
-M12 = 0 # surge-heave
-M13 = m_tot * z_CM_tot # surge-pitch
-M14 = -m_tot * y_CM_tot # surge-yaw
-M21 = 0 # heave-surge
-M22 = m_tot # heave-heave
-M23 = -m_tot * x_CM_tot # heave-pitch
-M24 = 0 # heave-yaw
-M31 = m_tot * z_CM_tot # pitch-surge
-M32 = -m_tot * x_CM_tot # pitch-heave
-M33 = IOtot # pitch-pitch
-M34 = 0 # pitch-yaw (considering xg = yg = 0)
-M41 = -m_tot * y_CM_tot # yaw-surge
-M42 = 0 # yaw-heave
-M43 = 0 # yaw-pitch (considering xg = yg = 0)
-M44 = 2*IOtot # yaw-yaw 
+M12 = 0 # surge-sway
+M13 = 0 # surge-heave
+M14 = 0 # surge-roll
+M15 = m_tot * z_CM_tot#surge-pitch
+M16 = -m_tot * y_CM_tot #surge-ya
 
-M = np.array([[M11, M12, M13, M14],
-                    [M21, M22, M23, M24],
-                    [M31, M32, M33, M34],
-                    [M41, M42, M43, M44]])
+M21 = M12 # sway-surge
+M22 = m_tot # sway-sway
+M23 = 0 # sway-heave
+M24 = -m_tot * z_CM_tot # sway-roll
+M25 = 0 #sway-pitch
+M26 = m_tot * x_CM_tot#sway-yaw
+
+M31 = M13 # heave-surge
+M32 = M23 # heave-sway
+M33 = m_tot # heave-heave
+M34 = m_tot*y_CM_tot # heave-roll
+M35 = -m_tot*x_CM_tot  #heave-pitch
+M36 = 0 #heave-yaw
+
+M41 = M14 # roll-surge
+M42 = M24 # roll-sway
+M43 = M34 # roll-heave
+M44 = I0_YY + I0_ZZ # roll-roll 
+M45 = 0 #roll-pitch
+M46 = m_tot*z_CM_tot*x_CM_tot #roll-yaw
+
+M51 = M15#pitch-surge
+M52 = M25#pitch-sway
+M53 = M35#pitch-heave
+M54 = M45#pitch-roll
+M55 = I0_XX + I0_ZZ #pitch-pitch
+M56 = 0#pitch-yaw
+
+M61 = M16#yaw-surge
+M62 = M26#yaw-sway
+M63 = M36#yaw-heave
+M64 = M46#yaw-roll
+M65 = M56#yaw-pitch
+M66 = I0_XX + I0_YY#yaw-yaw
+
+
+M = np.array([  [M11, M12, M13, M14, M15, M16],
+                [M21, M22, M23, M24, M25, M26],
+                [M31, M32, M33, M34, M35, M36],
+                [M41, M42, M43, M44, M45, M46],
+                [M51, M52, M53, M54, M55, M56],
+                [M61, M62, M63, M64, M65, M66]])
+
 
 
 #-----------------------------------------------
