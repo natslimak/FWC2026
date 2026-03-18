@@ -139,36 +139,73 @@ print(f'The center of bouyancy around x is at {y_CB_tot} m')
 #%% Hydrostatic restoring matrix
 # surge
 C_11 = 0       # surge-surge
-C_12 = 0       # surge-heave
-C_13 = 0       # surge-pitch
-C_14= 0        # surge-yaw
+C_12 = 0       # surge-sway
+C_13 = 0       # surge-heave
+C_14 = 0       # surge-roll
+C_15 = 0       # surge-pitch
+C_16 = 0       # surge-yaw
+
+# sway
+C_21 = 0       # sway-surge
+C_22 = 0       # sway-sway
+C_23 = 0       # sway-heave
+C_24 = 0       # sway-roll
+C_25 = 0       # sway-pitch
+C_26 = 0       # sway-yaw
+
 
 # heave
-C_21 = 0       # heave-surge
-C_22 = 2 * rhow * g * A_back + rhow * g * A_front   # heave-heave
+C_31 = 0       # heave-surge
+C_32 = 0       # heave-sway
+C_33 = 2 * rhow * g * A_back + rhow * g * A_front   # heave-heave
 
-I_x = -rhow * g * (2 * A_back * x_1 +  A_front * x_3)
-C_23 = I_x     # heave-pitch
-C_24 = 0       # heave-yaw
+I_y = A_back *y_1 + A_back * y_2 + A_front * y_3
+I_x = 2 * A_back * x_1 +  A_front * x_3
 
+C_34 = rhow * g * I_y       # heave-roll
+C_35 = - rhow * g * I_x     # heave-pitch
+C_36 = 0       # heave-yaw
+
+# roll
+C_41 = 0       # roll-surge
+C_42 = 0       # roll-sway
+C_43 = C_34    # roll-heave
+
+I_yy = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
+                    A_back * y_1**2 + A_back * y_2**2 +\
+                    A_front * y_3**2
+I_xy = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
+                    A_back * y_1 * x_1 + A_back * y_2 * x_2 +\
+                    A_front * y_3 * x_3
+
+C_44 =  rhow * g * I_yy + m_tot * g * (z_CB_tot - z_CM_tot) # roll-roll
+C_45 = - rhow * g * I_xy   # roll-pitch
+C_46 = 0       # roll-yaw
+ 
 # pitch
-C_31 = 0       # pitch-surge
-C_32 = C_23    # pitch-heave
+C_51 = 0       # pitch-surge
+C_52 = 0       # pitch-sway
+C_53 = C_35    # pitch-heave
+C_54 = C_45    # pitch-roll
 
-I_xx = rhow * g * (2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
+I_xx = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
                     2 * A_back * x_1**2 +\
-                        A_front * x_3**2)
-C_33 = m_tot * g * (z_CB_tot - z_CM_tot) + I_xx   # pitch-pitch
-C_34 = 0       # pitch-yaw
+                        A_front * x_3**2
+C_55 = m_tot * g * (z_CB_tot - z_CM_tot) + rhow * g * I_xx   # pitch-pitch
+C_56 = 0       # pitch-yaw
   
 # yaw
-C_41 = 0       # yaw-surge
-C_42 = 0       # yaw-heave
-C_43 = - m_tot * g * (y_CB_tot - y_CM_tot)   # yaw-pitch
-C_44 = 0       # yaw-yaw
+C_61 = 0       # yaw-surge
+C_62 = 0       # yaw-sway
+C_63 = 0       # yaw-heave
+C_64 = - m_tot * g * (x_CB_tot - x_CM_tot)   # yaw-roll 
+C_65 = - m_tot * g * (y_CB_tot - y_CM_tot)   # yaw-pitch
+C_66 = 0       # yaw-yaw
 
 
-C_hydro = np.array([[C_11, C_21, C_31, C_41],
-                    [C_12, C_22, C_32, C_42],
-                    [C_13, C_23, C_33, C_43],
-                    [C_14, C_24, C_34, C_44]])
+C_hydro = np.array([[C_11, C_21, C_31, C_41, C_51, C_61],
+                    [C_12, C_22, C_32, C_42, C_52, C_62],
+                    [C_13, C_23, C_33, C_43, C_53, C_63],
+                    [C_14, C_24, C_34, C_44, C_54, C_64],
+                    [C_15, C_25, C_35, C_45, C_55, C_65],
+                    [C_16, C_26, C_36, C_46, C_56, C_66]])
