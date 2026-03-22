@@ -5,17 +5,18 @@ from moorpy.helpers import getLineProps
 
 CHAIN_SPEC = {
     "name": "chain120",
-    "mode": "catalog",  # 'catalog' or 'custom'
+    "mode": "custom",  # 'catalog' or 'custom'
+
     "catalog": {
         "size_mm": 20,
         "material": "chain",
         "source": "default",
     },
     "custom": {
-        "d_vol": 0.036,         # [m] volume-equivalent diameter
-        "massden": 8.0,         # [kg/m] linear mass density
-        "EA": 3.42396856e7,     # [N] axial stiffness
-        "d_nom": 0.02,          # [m] nominal diameter (optional)
+        "d_vol": 0.018,         # [m] volume-equivalent diameter
+        "massden": 1.99,        # [kg/m] linear mass density
+        "EA": 10100,            # [N] axial stiffness
+        "d_nom": 0.01,          # [m] nominal diameter (optional)
         "MBL": 4.6649822e5,     # [N] minimum breaking load (optional)
         "Cd": 1.333,
         "Ca": 1.0,
@@ -30,6 +31,7 @@ CHAIN_SPEC = {
 ROPE_SPEC = {
     "name": "polyester180",
     "mode": "catalog",  # 'catalog' or 'custom'
+    
     "catalog": {
         "size_mm": 60,
         "material": "polyester",
