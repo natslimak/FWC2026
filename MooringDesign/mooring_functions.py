@@ -93,6 +93,22 @@ def style_chain_rope_plot(
     ax.legend(handles=legend_handles, loc=legend_loc, bbox_to_anchor=legend_anchor, frameon=True)
 
 
+def style_thrust_comparison_plot(
+    ax,
+    title='Deflection under Turbine Thrust',
+    baseline_color='black',
+    thrust_color='red',
+    legend_loc='upper right',
+):
+    """Set title and legend for no-thrust vs thrust equilibrium comparison."""
+    ax.set_title(title)
+    legend_handles = [
+        Line2D([0], [0], color=baseline_color, lw=2, label='No thrust (baseline)'),
+        Line2D([0], [0], color=thrust_color, lw=2, label='With turbine thrust'),
+    ]
+    ax.legend(handles=legend_handles, loc=legend_loc, frameon=True)
+
+
 def print_body_response(r6, label='Body response'):
     """Print body displacement and rotation from a 6-DOF state vector [x,y,z,rx,ry,rz]."""
     x, y, z, rx, ry, rz = r6
@@ -101,3 +117,50 @@ def print_body_response(r6, label='Body response'):
         f"{label}: roll={np.degrees(rx):.3f} deg, "
         f"pitch={np.degrees(ry):.3f} deg, yaw={np.degrees(rz):.3f} deg"
     )
+
+
+def check_anchor_stability(system, anchor_weight_N, angles):
+    """Check if anchors can withstand line loads.
+
+    For each mooring leg, reports tension components and safety margin.
+    Vertical component of tension (from line angle) tries to pull anchor up.
+    Anchor weight resists uplift.
+    """
+    print("\nAnchor Stability Report")
+    print("Leg | Chain_TA(N) | Angle(°) | T_vertical(N) | T_horizontal(N) | Safety_Margin(N) | Status")
+    
+    all_safe = True
+    for i in range(len(angles)):
+        chain_line = system.lineList[2 * i]  # chain is the first line of each leg
+        
+        # Get anchor and connector positions
+        r_anchor = chain_line.rA  # anchor point at seabed
+        r_connector = chain_line.rB  # connector point (transition to rope)
+        
+        # Calculate vertical and horizontal distances
+        dz = r_connector[2] - r_anchor[2]  # vertical rise
+        dx_dy = np.sqrt((r_connector[0] - r_anchor[0])**2 + (r_connector[1] - r_anchor[1])**2)  # horizontal distance
+        
+        # Line angle from horizontal
+        theta_rad = np.arctan2(dz, dx_dy)
+        theta_deg = np.degrees(theta_rad)
+        
+        # Decompose tension at anchor
+        T_total = chain_line.TA
+        T_vertical = T_total * np.sin(theta_rad)
+        T_horizontal = T_total * np.cos(theta_rad)
+        
+        # Safety check: anchor weight must exceed vertical pull
+        safety_margin = anchor_weight_N - T_vertical
+        is_safe = safety_margin > 0
+        all_safe = all_safe and is_safe
+        
+        status = "OK" if is_safe else "FAIL"
+        print(f"{i+1:>3} | {T_total:10.2f} | {theta_deg:7.2f} deg | {T_vertical:13.2f} | {T_horizontal:15.2f} | {safety_margin:16.2f} | {status}")
+    
+    if not all_safe:
+        print("\nWARNING: Anchor uplift risk! Increase anchor weight or reduce applied load.")
+    else:
+        print("\nAll anchors stable against uplift.")
+    
+    return all_safe

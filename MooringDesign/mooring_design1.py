@@ -1,29 +1,32 @@
 import numpy as np
 import moorpy as mp
 import matplotlib.pyplot as plt
+from scipy.integrate import simpson
 from line_type_specs import register_chain_and_rope
 from mooring_functions import (
     annotate_mooring_plot,
+    check_anchor_stability,
     plot_body_axes,
     print_body_response,
     print_line_tensions_by_leg,
     report_line_geometry,
     report_load_line_status,
     style_chain_rope_plot,
+    style_thrust_comparison_plot,
 )
 
 # ========================================
 # -----  System Geometry Parameters  -----
 # ========================================
 
-depth     = 1.5                               # water depth [m]
+depth     = 1.5                             # water depth [m]
 angles    = np.radians([60, 180, 300])      # line headings list [rad]
-rAnchor   = 3.5                             # anchor radius/spacing [m]
+rAnchor   = 4.5                             # anchor radius/spacing [m]
 zFair     = 0                               # fairlead z elevation [m] (below SWL)
 rFair     = 0.1                             # fairlead radius [m]
 
 # Mixed line definition (anchor side + fairlead side)
-chainLength = 2.5                           # anchor-side chain length [m]
+chainLength = 3.5                           # anchor-side chain length [m]
 ropeLength  = 1.5                           # fairlead-side rope length [m]
 
 # Plot options for small-scale models
@@ -38,6 +41,10 @@ v_disp = m_floater / rho_water          # ~0.078 m^3 to float 80 kg
 a = 2.0                                 # m, side length of an equilateral triangle (for estimating waterplane area)
 AWP_est = (np.sqrt(3) / 4.0) * a**2     # m^2 (if full triangle is at waterplane)
 rM_est = np.array([0.0, 0.0, 0.15])     # m, simple initial guess of mass center above the waterline (for estimating hydrostatic stiffness)
+
+# Anchor properties
+m_anchor = 3.0                          # kg (anchor mass)
+anchor_weight_N = m_anchor * 9.81       # N (anchor weight)
 
 
 
@@ -164,7 +171,9 @@ ms.bodyList[0].f6Ext = np.array([thrust_total_N, 0.0, 0.0, 0.0, 0.0, 0.0])
 # Plot the new equilibrium with thrust applied
 ms.solveEquilibrium(tol=1e-6)
 fig_cmp, ax_cmp = ms.plot(ax=ax_cmp, color='red', draw_body=False)
+style_thrust_comparison_plot(ax_cmp)
 plot_body_axes(ms, ax_cmp, body_axes_len=body_axes_len, color='r', enabled=show_small_body_axes)
+plt.show()
 
 # Print results for the turbine thrust case
 print("\n\n=== CASE 1: Turbine Thrust Test ===")
@@ -174,10 +183,6 @@ print_body_response(ms.bodyList[0].r6)
 # Print line tensions grouped by mooring leg (chain + rope)
 print_line_tensions_by_leg(ms, angles)
 report_load_line_status(ms, max_utilization=0.5)
+check_anchor_stability(ms, anchor_weight_N, angles)
 
-
-
-# ==========================================================
-# -----                 CASE 2: Waves                  -----
-# ==========================================================
 
