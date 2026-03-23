@@ -136,8 +136,8 @@ Cmoor = ms.getCoupledStiffness(lines_only=True)
 Ctotal = ms.getCoupledStiffness(lines_only=False)
 Chydro = Ctotal - Cmoor
 
-# print("\nC_Moor Matrix (6x6):")
-# print(Cmoor)
+print("\nC_Moor Matrix (6x6):")
+print(Cmoor)
 
 
 # ==========================================================
@@ -162,7 +162,7 @@ if ms.bodyList[0].type != 0:
 
 # Turbine thrust test (2 turbines, 10 kgf each)
 n_turbines = 2
-thrust_kgf_each = 10  # <- adjust this value with the actual thrust per turbine in kgf (1 kgf = 9.81 N)
+thrust_kgf_each = 4  # <- adjust this value with the actual thrust per turbine in kgf (1 kgf = 9.81 N)
 thrust_total_N = n_turbines * thrust_kgf_each * 9.81
 
 # Apply thrust in +x direction. Format: [Fx, Fy, Fz, Mx, My, Mz]

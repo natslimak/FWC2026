@@ -15,7 +15,7 @@ CHAIN_SPEC = {
     "custom": {
         "d_vol": 0.018,         # [m] volume-equivalent diameter
         "massden": 1.99,        # [kg/m] linear mass density
-        "EA": 10100,            # [N] axial stiffness
+        "EA": 8540,            # [N] axial stiffness
         "d_nom": 0.01,          # [m] nominal diameter (optional)
         "MBL": 4.6649822e5,     # [N] minimum breaking load (optional)
         "Cd": 1.333,
@@ -30,7 +30,7 @@ CHAIN_SPEC = {
 
 ROPE_SPEC = {
     "name": "polyester180",
-    "mode": "catalog",  # 'catalog' or 'custom'
+    "mode": "custom",  # 'catalog' or 'custom'
     
     "catalog": {
         "size_mm": 60,
@@ -38,10 +38,10 @@ ROPE_SPEC = {
         "source": "default",
     },
     "custom": {
-        "d_vol": 0.0828,
-        "massden": 3.228,
-        "EA": 1.2315186e7,
-        "d_nom": 0.06,
+        "d_vol": 0.002,
+        "massden": 0.006098,
+        "EA": 7713,
+        "d_nom": 0.002,
         "MBL": 6.549729e5,
         "Cd": 1.2,
         "Ca": 1.0,
