@@ -21,15 +21,16 @@ g = 9.81            # Gravity [m/s^2]
 h = 2               # Water depth [m]
 rhow = 1025         # Water density [kg/m^3]
 rhoa = 1.29         # Air density [kg/m^3]
+rho_pvc = 1400      # PVC density [kg/m^3]
 
 # tower and rotor parameters
 z_hub = 1.2        # tower height above SWL [kg]
 D_tow = 38.2e-2    # tower outer diameter [m]
 D_tow_in = 37.2e-2 # tower inner diameter [m]
-m_tow = 11.5       # tower mass   [kg]
 
 D_rot = 1.2        # rotor diameter [m]
-m_rot = 5.33       # rotor + nacelle [kg]
+m_rot = 8       # rotor + nacelle [kg]
+
 
 # floater parameters
 
@@ -37,13 +38,16 @@ m_bf = 5           # Back Floater mass [kg]
 m_ff = 5           # Front Floater mass [kg]
 h_bf = 0.5         # Back floater hight, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
-D_b = 0.3          # Back floater Diameter [m]
-D_b_in = 0.29      # Back floater inner diameter [m]
-D_f = 0.3          # Front floater Diameter [m]
-D_f_in = 0.29      # Front floater inner diameter [m]
+D_b = 0.2         # Back floater Diameter [m]
+D_b_in = 0.19     # Back floater inner diameter [m]
+D_f = 0.2          # Front floater Diameter [m]
+D_f_in = 0.19      # Front floater inner diameter [m]
+A_ff_solid = (np.pi*(D_f)**2)/4
+A_bf_solid = (np.pi*(D_b)**2)/4
+
+
 
 m_bb = 10          # Back Ballast mass [kg]
-m_fb = 20          # Front Ballast mass [kg]
 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
@@ -52,14 +56,36 @@ edge = 1           # distance between columns: equi lateral triangle
 
 # mooring system
 K_moor = 12        # mooring stiffness [N/m]
-z_moor = 0.3       
-#%% DRAFT CALCULATION
+z_moor = 0.3 
 
-m_back =  m_tow + m_rot + m_bb + m_bf         # Back side mass [kg] 
+draft = 0.3 # Draft [m]
 
-m_front = m_fb + m_ff                         # Front side mass [kg] 
 
-m_tot = 2 * m_back + m_front                      # Total mass
+# Mass of tower
+h_out = h_ff - draft
+h_left = z_hub - h_out # Length of the tower [m]\
+m_tow = rho_pvc * np.pi*(((D_tow/2)**2) - ((D_tow_in/2)**2))*h_left
+
+# MASS CALCULATION
+
+L_pontoon = 2.15 # Length of the pontoon [m]
+D_pontoon = 0.1 # Diameter of the pontton [m]
+D_pontoon_in = 0.09 # Inner diameter of pontoon [m]
+
+
+m_tot = rhow*((A_ff_solid*draft) + (2*A_bf_solid*draft) + (3*(L_pontoon*np.pi*(D_pontoon/2)**2)))
+
+m_pontoon = rho_pvc*np.pi*((D_pontoon/2)**2-(D_pontoon_in/2)**2)*L_pontoon
+
+m_back = (m_tot - (3*m_pontoon))/(2 + ((D_f**2)/(D_b**2))) # For a single back floater
+
+m_bb = (m_back - (m_rot + m_tow + m_bf))
+
+m_front = m_back*((np.pi*((D_f/2)**2))/(2*(np.pi*((D_b/2)**2)))) # Front side mass [kg] (considering only the OD)
+
+m_fb = m_front - m_ff  # Calculation of front ballast to maintain the same draft                       
+
+
 
 A_back = np.pi * D_b**2 / 4                   # Sectional area back cylinders
                                               # individually [m^2]
@@ -68,11 +94,7 @@ A_front = np.pi * D_f**2 / 4                  # Sectional area front cylinder [m
 
 A_total = 2 * A_back + A_front                # total sectional area [m^2]
 
-draft = m_tot / (A_total * rhow)              # draft [m]
 
-h_out =  (h_bf +  h_bb) - draft              # height of the floater outside water
-
-h_left = z_hub - h_out                       # allowed length for tower [m] 
 
 # printing
 if draft >= (h_bf + h_bb):
