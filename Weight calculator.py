@@ -18,6 +18,10 @@ zhub = 1.2 # hub hight [m]
 M = 2*T*zhub #overturning moment [Nm]
 c55 = M/theta #restoring [Nm/rad]
 L_p = np.sqrt((4*c55/(3*rhow*g*np.pi*(Diameter/2)**2))-(Diameter/2)**2/3) #lenght pontoon [m]
+param1 = c55/(rhow*g)
+param2 = 3*np.pi*((Diameter/2)**4)/4
+param3 = np.pi*((Diameter/2)**2)/4
+L_p = np.sqrt((param1 - param2)/param3)
 
 plt.figure()
 plt.plot(Diameter,L_p, marker='o', label=f'Pontoons diameter = {D_pon} m')
