@@ -1,16 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-rhow = 1025 #water density kg/m^3
-g = 9.81 #m/s^2
+#%% PARAMETERS
 
-draft = np.array([0.10,0.20,0.30,0.40]) #lenght under water [m]
-Diameter = np.linspace (0.1,0.35,6) #floater diameter [m]
-D_pon = 0.1 #pontoon diameter [m]
-theta_deg = 10 #pitchangle [deg]
-theta = np.deg2rad(theta_deg) #pitch angle [rad]
-T = 85 # thust single rotor[N]
-zhub = 1.2 # hub hight [m] 
+# ambient 
+g = 9.81            # Gravity [m/s^2]
+rhow = 1025         # Water density [kg/m^3]
+
+# floater and pontoons parameters
+draft = np.array([0.10,0.20,0.30,0.40])    # length under water [m]
+Diameter = np.linspace (0.1,0.35,6)        # floater diameter [m]
+D_pon = 0.1                                # pontoon diameter [m]
+
+# tower parameters
+zhub = 1.2                                 # hub hight [m]
+
+# maximum pitch parameters
+theta_deg = np.deg2rad(10)                 # pitch angle [deg]
+T = 85                                     # thust single rotor[N]
 
 #--------------------------------------------
 # Calculate the length of the pontoons
