@@ -85,7 +85,7 @@ m_front = m_back*((np.pi*((D_f/2)**2))/(2*(np.pi*((D_b/2)**2)))) # Front side ma
 
 m_fb = m_front - m_ff  # Calculation of front ballast to maintain the same draft                       
 
-
+A_pontoon = np.pi*((D_pontoon/2)**2 - (D_pontoon_in/2)**2)
 
 A_back = np.pi * D_b**2 / 4                   # Sectional area back cylinders
                                               # individually [m^2]
@@ -120,6 +120,17 @@ x_1 = 0
 x_2 = 0
 x_3 = - np.sqrt(3)*edge/2
 
+# For pontoons
+# No. 1 is between floater 1 and 2; No. 2 is between floater 2 and 3
+
+y_p1 = 0
+y_p2 = (L_pontoon/2)* np.sin(np.deg2rad(30))
+y_p3 = -(L_pontoon/2)*np.sin(np.deg2rad(30))
+x_p1 = 0
+x_p2 = -(L_pontoon/2)*np.sin(np.deg2rad(60))
+x_p3 = -(L_pontoon/2)*np.sin(np.deg2rad(60))
+
+
 #%% CM COORDINATES    
 
 z_CM_tow = (z_hub - h_out) / 2        # z center of mass tower
@@ -130,19 +141,22 @@ z_CM_ff = h_out - h_bf / 2            # z center of front floater
 z_CM_bb = (h_bb / 2) - draft          # z center of back ballast
 z_CM_fb = (h_fb / 2) - draft          # z center of front ballast
 
+z_CM_pon = - D_pontoon/2              # z center of pontoon (considering th epontoll is immediately below the water level)
+
+
 # z position of center of mass
 z_CM_tot = (2 * z_CM_tow * m_tow + 2 * z_hub * m_rot + 2 * z_CM_bf * m_bf +\
-            2 * z_CM_bb * m_bb + z_CM_ff * m_ff + z_CM_fb * m_fb) / m_tot
+            2 * z_CM_bb * m_bb + z_CM_ff * m_ff + z_CM_fb * m_fb + z_CM_pon * m_pontoon * 3) / m_tot
 
 print(f'The center of mass is at {z_CM_tot} m')
 
 # y position center of mass
-x_CM_tot = (m_back * x_1 + m_back * x_2 + m_front *x_3) / m_tot
+x_CM_tot = (m_back * x_1 + m_back * x_2 + m_front *x_3 + m_pontoon *(x_p1 + x_p2 + x_p3)) / m_tot
 
 print(f'The center of mass around y is at {x_CM_tot} m')
 
 # x position center of mass
-y_CM_tot = (m_back * y_1 + m_back * y_2 + m_front *y_3) / m_tot
+y_CM_tot = (m_back * y_1 + m_back * y_2 + m_front *y_3 + m_pontoon *(y_p1 + y_p2 + y_p3)) / m_tot
 
 print(f'The center of mass around x is at {y_CM_tot} m')
 
@@ -156,16 +170,17 @@ print(f'The center of bouyancy is at {z_CB_tot} m')
 Vol_1_sub = draft * A_back
 Vol_2_sub = draft * A_back
 Vol_3_sub = draft * A_front
+Vol_pontoon = np.pi*((D_pontoon/2)**2)*L_pontoon
 
 # x position of center of mass
-x_CB_tot = (Vol_1_sub * x_1 + Vol_2_sub * x_2 + Vol_3_sub * x_3) /\
-                    (Vol_1_sub + Vol_2_sub + Vol_3_sub)
+x_CB_tot = (Vol_1_sub * x_1 + Vol_2_sub * x_2 + Vol_3_sub * x_3 + Vol_pontoon * (x_p1 + x_p2 + x_p3)) /\
+                    (Vol_1_sub + Vol_2_sub + Vol_3_sub + (3*Vol_pontoon))
                     
 print(f'The center of bouyancy around y is at {x_CB_tot} m')
       
 # y position of center of mass              
-y_CB_tot = (Vol_1_sub * y_1 + Vol_2_sub * y_2 + Vol_3_sub * y_3) /\
-                    (Vol_1_sub + Vol_2_sub + Vol_3_sub)
+y_CB_tot = (Vol_1_sub * y_1 + Vol_2_sub * y_2 + Vol_3_sub * y_3 + Vol_pontoon * (y_p1 + y_p2 + y_p3)) /\
+                    (Vol_1_sub + Vol_2_sub + Vol_3_sub + (3 * Vol_pontoon))
 
 print(f'The center of bouyancy around x is at {y_CB_tot} m')
 
@@ -226,20 +241,53 @@ I0_XY_frontball = 0
 I0_XZ_frontball = m_fb * x_3 * z_CM_fb
 I0_YZ_frontball = 0
 
+# Pontoon 1: it's a horizontal thick-walled cylinder
+I0_XX_pontoon_1 =  m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12
+I0_ZZ_pontoon_1 =  m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12
+I0_YY_pontoon_1 = 0.5 *m_pontoon * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2) + m_pontoon * z_CM_pon**2 
+I0_XY_pontoon_1 = 0
+I0_XZ_pontoon_1 = 0
+I0_YZ_pontoon_1 = 0
+
+# Pontoon 2: it's a horizontal thick-walled cylinder
+I0_XX_pontoon_2 =  (m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12)*(np.sin(np.deg2rad(30))**2) + \
+                        (0.5 *m_pontoon * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2))*(np.cos(np.deg2rad(30))**2) + \
+                        m_pontoon * x_p2**2
+I0_ZZ_pontoon_2 =  m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12
+I0_YY_pontoon_2 = (m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12)*(np.sin(np.deg2rad(30))**2) + \
+                        (0.5 *m_pontoon * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2))*(np.cos(np.deg2rad(30))**2) + \
+                        m_pontoon * y_p2**2
+I0_XY_pontoon_2 = m_pontoon * x_p2 * z_CM_pon
+I0_XZ_pontoon_2 = 0
+I0_YZ_pontoon_2 = 0
+
+# Pontoon 3: it's a horizontal thick-walled cylinder
+I0_XX_pontoon_3 =  (m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12)*(np.sin(np.deg2rad(30))**2) + \
+                        (0.5 *m_pontoon * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2))*(np.cos(np.deg2rad(30))**2) + \
+                        m_pontoon * x_p3**2
+I0_ZZ_pontoon_3 =  m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12
+I0_YY_pontoon_3 = (m_pontoon * (3 * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2)+ L_pontoon**2) / 12)*(np.sin(np.deg2rad(30))**2) + \
+                        (0.5 *m_pontoon * ((D_pontoon / 2)**2 + (D_pontoon_in / 2)**2))*(np.cos(np.deg2rad(30))**2) + \
+                        m_pontoon * y_p3**2
+I0_XY_pontoon_3 = m_pontoon * x_p3 * z_CM_pon
+I0_XZ_pontoon_3 = 0
+I0_YZ_pontoon_3 = 0
+
+
 # sum of inertia components
 I0_XX = 2*(I0_XX_turb + I0_XX_backball + I0_XX_backfloat + I0_XX_tower) +\
-        I0_XX_frontfloat + I0_XX_frontball
+        I0_XX_frontfloat + I0_XX_frontball + I0_XX_pontoon_1 + I0_XX_pontoon_2 + I0_XX_pontoon_3
 I0_YY = 2*(I0_YY_turb + I0_YY_backball + I0_YY_backfloat + I0_YY_tower) +\
-        I0_YY_frontfloat + I0_YY_frontball
+        I0_YY_frontfloat + I0_YY_frontball + I0_YY_pontoon_1 + I0_YY_pontoon_2 + I0_YY_pontoon_3
 I0_ZZ = 2*(I0_ZZ_turb + I0_ZZ_backball + I0_ZZ_backfloat + I0_ZZ_tower) +\
-        I0_ZZ_frontfloat + I0_ZZ_frontball
+        I0_ZZ_frontfloat + I0_ZZ_frontball + + I0_ZZ_pontoon_1 + I0_ZZ_pontoon_2 + I0_ZZ_pontoon_3
 I0_XY = 2*(I0_XY_turb + I0_XY_backball + I0_XY_backfloat + I0_XY_tower) +\
-        I0_XY_frontfloat + I0_XY_frontball
+        I0_XY_frontfloat + I0_XY_frontball + + I0_XY_pontoon_1 + I0_XY_pontoon_2 + I0_XY_pontoon_3
 I0_XZ = 2*(I0_XZ_turb + I0_XZ_backball + I0_XZ_backfloat + I0_XZ_tower) +\
-        I0_XZ_frontfloat + I0_XZ_frontball
+        I0_XZ_frontfloat + I0_XZ_frontball + I0_XZ_pontoon_1 + I0_XZ_pontoon_2 + I0_XZ_pontoon_3
 I0_YZ = I0_YZ_turb_1 + I0_YZ_backball_1 + I0_YZ_backfloat_1 + I0_YZ_tower_1 +\
         I0_YZ_turb_2 + I0_YZ_backball_2 + I0_YZ_backfloat_2 + I0_YZ_tower_2+\
-        I0_YZ_frontfloat + I0_YZ_frontball
+        I0_YZ_frontfloat + I0_YZ_frontball + + I0_YZ_pontoon_1 + I0_YZ_pontoon_2 + I0_YZ_pontoon_3
 #%% MASS MATRIX
 
 # surge
@@ -301,7 +349,7 @@ M = np.array([  [M11, M12, M13, M14, M15, M16],
 
 #%% ADDED MASS MATRIX
 
-A = np.zeros_like(M)
+A = M
 
 #%% DAMPING MATRIX
 
@@ -310,22 +358,25 @@ B = np.zeros_like(M)
 #%% MOMENTS OF WATERPLANE AREA
 
 # Linear moments
-I_x = 2 * A_back * x_1 +  A_front * x_3
+I_x = 2 * A_back * x_1 +  A_front * x_3 + A_pontoon * (x_p1 + x_p2 + x_p3)
 
-I_y = A_back *y_1 + A_back * y_2 + A_front * y_3
+I_y = A_back *y_1 + A_back * y_2 + A_front * y_3 + A_pontoon * (y_p1 + y_p2 + y_p3)
 
 # Second-order moments
 I_xx = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
                     2 * A_back * x_1**2 +\
-                        A_front * x_3**2
+                        A_front * x_3**2 +\
+                        3*np.pi * D_pontoon**4 / 64 + A_pontoon *((x_p1**2) + (x_p2**2) + (x_p3**2))
                         
 I_yy = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
                     A_back * y_1**2 + A_back * y_2**2 +\
-                    A_front * y_3**2
+                    A_front * y_3**2 +\
+                    3*np.pi * D_pontoon**4 / 64 + A_pontoon *((y_p1**2) + (y_p2**2) + (y_p3**2))
                     
 I_xy = 2 * np.pi * D_b**4 / 64 + np.pi * D_f**4 / 64 +\
                     A_back * y_1 * x_1 + A_back * y_2 * x_2 +\
-                    A_front * y_3 * x_3
+                    A_front * y_3 * x_3 +\
+                    3*np.pi * D_pontoon**4 / 64 + A_pontoon *((x_p1*y_p1) + (x_p2*y_p2) + (x_p3*y_p3))
 
 #%% HYDROSTATIC STIFFNESS MATRIX
 
