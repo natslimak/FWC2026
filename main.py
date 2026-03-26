@@ -391,6 +391,11 @@ I0_YZ = I0_YZ_turb_1 + I0_YZ_tower_1 + I0_YZ_backball_1 + I0_YZ_backfloat_1 + I0
         I0_YZ_turb_2 + I0_YZ_tower_2 + I0_YZ_backball_2 + I0_YZ_backfloat_2 + I0_YZ_backhp_2 +\
         I0_YZ_frontfloat + I0_YZ_frontball + I0_YZ_fronthp +\
         I0_YZ_pontoon_1 + I0_YZ_pontoon_2 + I0_YZ_pontoon_3
+
+# force the symmetric terms around the X axis (I0_XY and I0_YZ) to be zero,
+# otherwise they could have some floating error
+I0_YZ = 0
+I0_XY = 0
 #%% MASS MATRIX
 
 # surge
