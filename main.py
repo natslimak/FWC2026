@@ -455,9 +455,29 @@ M = np.array([  [M11, M12, M13, M14, M15, M16],
                 [M61, M62, M63, M64, M65, M66]])
 
 
+
+# For heave plate
+
+m_a_heave_plate = (1/3)*rhow*(D_hp**3) # For one heave plate (According to L.Tao et.al.--> Eq. 24)
+m_a_total = 3*m_a_heave_plate          # For three heave plates, assuming that the heave plates are seperated such that they don't interact with each other
+
 #%% ADDED MASS MATRIX
 
 A = M
+
+# Heave couple components of added mass matrix changing because of heave plate
+
+A33 = m_a_total                       # Heave-heave
+A34 = m_a_total *(y_1 + y_2 + y_3)    # Heave-roll
+A35 = - m_a_total*(x_1 + x_2 + x_3)   # Heave-pitch
+A43 = A34                             # Roll-heave
+A53 = A35                             # Pitch-heave
+
+A[2,2] = A33
+A[2,3] = A34
+A[2,4] = A35
+A[3,2] = A43
+A[4,2] = A53
 
 #%% DAMPING MATRIX
 

@@ -1,23 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-#%% PARAMETERS
+rhow = 1025 #water density kg/m^3
+g = 9.81 #m/s^2
 
-# ambient 
-g = 9.81            # Gravity [m/s^2]
-rhow = 1025         # Water density [kg/m^3]
-
-# floater and pontoons parameters
-draft = np.array([0.10,0.20,0.30,0.40])    # length under water [m]
-Diameter = np.linspace (0.1,0.35,6)        # floater diameter [m]
-D_pon = 0.1                                # pontoon diameter [m]
-
-# tower parameters
-zhub = 1.2                                 # hub hight [m]
-
-# maximum pitch parameters
-theta_deg = np.deg2rad(10)                 # pitch angle [deg]
-T = 85                                     # thust single rotor[N]
+draft = np.array([0.10,0.20,0.30,0.40]) #lenght under water [m]
+Diameter = np.linspace (0.1,0.35,6) #floater diameter [m]
+D_pon = 0.1 #pontoon diameter [m]
+theta_deg = 10 #pitchangle [deg]
+theta = np.deg2rad(theta_deg) #pitch angle [rad]
+T = 85 # thust single rotor[N]
+zhub = 1.2 # hub hight [m] 
 
 #--------------------------------------------
 # Calculate the length of the pontoons
@@ -27,7 +20,7 @@ c55 = M/theta #restoring [Nm/rad]
 L_p = np.sqrt((4*c55/(3*rhow*g*np.pi*(Diameter/2)**2))-(Diameter/2)**2/3) #lenght pontoon [m]
 param1 = c55/(rhow*g)
 param2 = 3*np.pi*((Diameter/2)**4)/4
-param3 = np.pi*((Diameter/2)**2)/4
+param3 = 3*np.pi*((Diameter/2)**2)/4
 L_p = np.sqrt((param1 - param2)/param3)
 
 plt.figure()
