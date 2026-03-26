@@ -81,8 +81,10 @@ def solve_equation(func, initial_guess):
 
 def equation(L):
     I_xx_floaters = 3 * np.pi * D_b**4 / 64 + A_front * 3 / 4 * L**2
-    I_xx_pontoons = 3* np.pi * D_pon **4 / 64 + 2 *  A_pon  * 3 / 16 * L**2
-    return c_55 - rhow * g * (I_xx_floaters - I_xx_pontoons)
+    # I_xx_pontoons = 3* np.pi * D_pon **4 / 64 + 2 *  A_pon  * 3 / 16 * L**2
+    # return c_55 - rhow * g * (I_xx_floaters - I_xx_pontoons)
+    return c_55 - rhow * g * (I_xx_floaters)
+
 
 # The difference between the edge length and the L_pon is that the length of 
 # the pontoons does not include the two half diameters of the distance between
@@ -115,7 +117,7 @@ m_pon = rho_pvc * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg]
 m_hp =  rho_pvc * A_hp * h_hp
 
 # mass floater in the back (without ballast)
-m_fb = rho_pvc * np.pi * ((D_b / 2)**2 - (D_b_in / 2)**2) * h_bf
+m_bf = rho_pvc * np.pi * ((D_b / 2)**2 - (D_b_in / 2)**2) * h_bf
 
 # mass floater in the front (without ballast)
 m_ff = rho_pvc * np.pi * ((D_f / 2)**2 - (D_f_in / 2)**2) * h_ff
@@ -128,10 +130,10 @@ m_back = m_remaining / (1 + A_front /( 2 * A_back))
 m_front = m_remaining - m_back
 
 # mass ballast in the back
-m_bb = (m_back - 2 * m_rot - 2* m_tow - 2* m_fb) / 2
+m_bb = (m_back - 2 * m_rot - 2* m_tow - 2* m_bf) / 2
 
 # mass ballast in the front
-m_bf = m_front - m_ff
+m_fb = m_front - m_ff
 
 # total mass in the back in each column
 m_tot_back = m_rot + m_tow +m_bf + m_bb + m_hp
@@ -454,31 +456,39 @@ M = np.array([  [M11, M12, M13, M14, M15, M16],
                 [M51, M52, M53, M54, M55, M56],
                 [M61, M62, M63, M64, M65, M66]])
 
-
-
-# For heave plate
-
-m_a_heave_plate = (1/3)*rhow*(D_hp**3) # For one heave plate (According to L.Tao et.al.--> Eq. 24)
-m_a_total = 3*m_a_heave_plate          # For three heave plates, assuming that the heave plates are seperated such that they don't interact with each other
-
 #%% ADDED MASS MATRIX
 
 A = M
 
-# Heave couple components of added mass matrix changing because of heave plate
+# Heave coupled components of added mass matrix changing because of heave plate
+m_a_heave_plate = (1/3) * rhow * (D_hp**3) # For one heave plate 
+                                           # (According to L.Tao et.al.--> Eq. 24)
+m_a_total = 3 * m_a_heave_plate            # For three heave plates, assuming
+                                           # that the heave plates are seperated
+                                           # such that they don't interact with
+                                           # each other
 
-A33 = m_a_total                       # Heave-heave
-A34 = m_a_total *(y_1 + y_2 + y_3)    # Heave-roll
-A35 = - m_a_total*(x_1 + x_2 + x_3)   # Heave-pitch
-A43 = A34                             # Roll-heave
-A53 = A35                             # Pitch-heave
+A33 = m_a_total                         # Heave-heave
+A34 = m_a_total * (y_1 + y_2 + y_3)     # Heave-roll
+A35 = - m_a_total * (x_1 + x_2 + x_3)   # Heave-pitch
+A43 = A34                               # Roll-heave
+A53 = A35                               # Pitch-heave
+
+# Rewrite surge and sway components with columns and pontoons contribution
+A11 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
+      rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
+      rhow * np.pi * D_pon**2 / 4 * L_pon * (1 + 2 * np.sin(np.deg2rad(60))**2)
+A22 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
+      rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
+      rhow * np.pi * D_pon**2 / 4 * L_pon * (0 + 2 * np.sin(np.deg2rad(30))**2)
+A33 += 3 * rhow * np.pi * D_pon**2 / 4 * L_pon
+
 
 A[2,2] = A33
 A[2,3] = A34
 A[2,4] = A35
 A[3,2] = A43
 A[4,2] = A53
-
 #%% DAMPING MATRIX
 
 B = np.zeros_like(M)
@@ -572,6 +582,9 @@ C_tot = C_hydro + C_mooring
 
 CoMA = np.linalg.solve(M + A, C_tot)
 eigVal, eigVec = np.linalg.eig(CoMA)
+
+# eliminate floating errors
+eigVal[np.abs(eigVal) < 1e-10] = 0
 
 # Natural frequencies
 omega_nat = np.sqrt(eigVal)
