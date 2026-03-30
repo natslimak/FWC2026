@@ -572,8 +572,64 @@ C_hydro = np.array([[C_11, C_21, C_31, C_41, C_51, C_61],
 
 #%% MOORING MATRIX
 
-C_mooring = np.zeros_like(C_hydro)
-#%% TOTAL STIFFNESS MATRIX
+#%% MOORING STIFFNESS MATRIX
+
+# surge
+C_mooring_11 = 1.26538165e+02   # surge-surge
+C_mooring_12 = -2.61478562e-01  # surge-sway
+C_mooring_13 = 1.21770107e+00   # surge-heave
+C_mooring_14 = 2.15752957e-01   # surge-roll
+C_mooring_15 = 5.80170115e+00   # surge-pitch
+C_mooring_16 = -7.84234243e-01  # surge-yaw
+
+# sway
+C_mooring_21 = -8.88178420e-15  # sway-surge
+C_mooring_22 = 1.26776086e+02   # sway-sway
+C_mooring_23 = 2.62712856e+00   # sway-heave
+C_mooring_24 = -8.82064317e+00  # sway-roll
+C_mooring_25 = 3.02903601e+00   # sway-pitch
+C_mooring_26 = 2.55817695e-02   # sway-yaw
+
+# heave
+C_mooring_31 = 1.47573058e+00   # heave-surge
+C_mooring_32 = -1.35542875e-01  # heave-sway
+C_mooring_33 = 1.67204365e+02   # heave-heave
+C_mooring_34 = 1.61298010e+00   # heave-roll
+C_mooring_35 = 3.19502978e+00   # heave-pitch
+C_mooring_36 = -2.01957624e+00  # heave-yaw
+
+# roll
+C_mooring_41 = -0.00000000e+00  # roll-surge
+C_mooring_42 = -8.56427108e+00  # roll-sway
+C_mooring_43 = -2.90021400e-01  # roll-heave
+C_mooring_44 = 2.92091256e+00   # roll-roll
+C_mooring_45 = -3.85455962e-01  # roll-pitch
+C_mooring_46 = 4.13293631e-03   # roll-yaw
+
+# pitch
+C_mooring_51 = 8.53327833e+00   # pitch-surge
+C_mooring_52 = -3.00750034e-02  # pitch-sway
+C_mooring_53 = 1.05623851e-01   # pitch-heave
+C_mooring_54 = 3.63873979e-02   # pitch-roll
+C_mooring_55 = 2.54547112e+00   # pitch-pitch
+C_mooring_56 = -8.70129687e-02  # pitch-yaw
+
+# yaw
+C_mooring_61 = -3.46944695e-17  # yaw-surge
+C_mooring_62 = 3.41095414e-02   # yaw-sway
+C_mooring_63 = -1.78247970e-02  # yaw-heave
+C_mooring_64 = -2.25648954e-03  # yaw-roll
+C_mooring_65 = -8.07955243e-04  # yaw-pitch
+C_mooring_66 = 4.24727171e+00   # yaw-yaw
+
+# matrix assembly
+C_mooring = np.array([[C_mooring_11, C_mooring_21, C_mooring_31, C_mooring_41, C_mooring_51, C_mooring_61],
+                      [C_mooring_12, C_mooring_22, C_mooring_32, C_mooring_42, C_mooring_52, C_mooring_62],
+                      [C_mooring_13, C_mooring_23, C_mooring_33, C_mooring_43, C_mooring_53, C_mooring_63],
+                      [C_mooring_14, C_mooring_24, C_mooring_34, C_mooring_44, C_mooring_54, C_mooring_64],
+                      [C_mooring_15, C_mooring_25, C_mooring_35, C_mooring_45, C_mooring_55, C_mooring_65],
+                      [C_mooring_16, C_mooring_26, C_mooring_36, C_mooring_46, C_mooring_56, C_mooring_66]])
+
 
 C_tot = C_hydro + C_mooring
 
