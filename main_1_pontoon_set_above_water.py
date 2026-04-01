@@ -26,9 +26,10 @@ rho_pvc = 1400      # PVC density [kg/m^3]
 rho_gf = 2460       # glass fiber density [kg/m^3]
 rho_pla = 1240       # PLA density [kg/m^3]
 
+
 # tower and rotor parameters
 z_hub = 1.2        # tower height above SWL [kg]
-D_tow = 0.15   # tower outer diameter [m]
+D_tow = 0.15    # tower outer diameter [m]
 D_tow_in = 0.14    # tower inner diameter [m]
 D_rot = 1.2        # rotor diameter [m]
 
@@ -37,14 +38,14 @@ h_bf = 0.5         # Back floater height, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
-D_b = 0.2          # Back floater Diameter [m]
-D_b_in = 0.19      # Back floater inner diameter [m]
-D_f = D_b          # Front floater Diameter [m]
-D_f_in = D_b_in    # Front floater inner diameter [m]
+D_b = 0.25          # Back floater Diameter [m]
+D_b_in = 0.245      # Back floater inner diameter [m]
+D_f = 0.27          # Front floater Diameter [m]
+D_f_in = 0.265    # Front floater inner diameter [m]
 
 # pontoons parameters
 D_pon = 0.1        # Outer iameter of the pontton [m]
-D_pon_in = 0.09    # Inner diameter of pontoon [m]
+D_pon_in = 0.09  # Inner diameter of pontoon [m]
 
 # heave plate
 D_hp = 0.3         # Diameter heave plate [m]
@@ -97,7 +98,7 @@ print(f'The pontoons are {L_pon:2} m long')
 #%% MASS CALCULATION
 
 # displaced volume: floater+ballast+pontoons+heave plate
-Vol_displaced = 3 * A_front * (draft - h_hp) + 3 * L_pon * A_pon + 3 * h_hp * A_hp
+Vol_displaced =  A_front * (draft - h_hp) + (2 * A_back * (draft - h_hp)) + 3 * h_hp * A_hp
 
 # total mass
 m_tot = Vol_displaced * rhow
@@ -109,10 +110,14 @@ m_rot = 6                        # rotor + nacelle [kg]
 # tower mass
 h_out = h_ff - draft + h_hp      # part of the floater above water [m]
 h_left = z_hub - h_out           # Length of the tower from floater to rotor [m]
+
+h_pontoon_above = 0.1  # from the water level to the centre of pontoon above water
+
+
 m_tow = rho_pvc * np.pi * ((D_tow / 2)**2 - (D_tow_in / 2)**2) * h_left  # [kg]
 
 # mass pontoons
-m_pon = rho_pvc * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg]
+m_pon = rho_pvc * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg] 
 
 # mass heave plate
 m_hp =  rho_pla * A_hp * h_hp
@@ -124,7 +129,8 @@ m_bf = rho_pvc * np.pi * ((D_b / 2)**2 - (D_b_in / 2)**2) * h_bf
 m_ff = rho_pvc * np.pi * ((D_f / 2)**2 - (D_f_in / 2)**2) * h_ff
 
 # remaining mass without pontoons and heave plates
-m_remaining = m_tot - 3 * m_pon
+m_remaining = m_tot - (3 * m_pon) # Considering 3 pontoons (one set above the water)
+
 
 divisor = ((A_hp * h_hp) + (A_back *(draft - h_hp)))/((A_hp * h_hp) + (A_front * (draft - h_hp)))
 
@@ -133,17 +139,28 @@ m_front = m_remaining / (1 + (2/divisor)) # mass in the front floater (including
 m_back = (m_remaining - m_front)/2 # For one floater component
 
 m_bb = m_back - m_tow - m_rot - m_bf - m_hp # For one floater component
-print(f'The mass of the back ballast is {m_bb} kg')
+print (f'The mass of the back ballast is {m_bb} kg')
 
-# mass ballast in the front
-m_fb = m_front - m_ff - m_hp
-print(f'The mass of the front ballast is {m_fb} kg')
+m_fb = m_front - m_ff - m_hp # For one floater component
+print (f'The mass of the front ballast is {m_fb} kg')
+
+
+# # mass back and front (back is floater+ballast+rotor+tower, front is floater+ballast)
+# m_back = m_remaining / (1 + A_front /( 2 * A_back))
+# m_front = m_remaining - m_back
+
+# # mass ballast in the back
+# m_bb = (m_back - 2 * m_rot - 2* m_tow - 2* m_bf) / 2
+
+# # mass ballast in the front
+# m_fb = m_front - m_ff
 
 # total mass in the back in each column
 m_tot_back = m_rot + m_tow +m_bf + m_bb + m_hp
 
 # total mass in the front
 m_tot_front = m_front
+
 #%% COORDINATE SYSTEM
 #   Determine positions of columns based on center of the back floaters.
 #   The x axis is pointing from the front floater to the ones in the back,
@@ -158,7 +175,7 @@ x_1 = 0
 x_2 = 0
 x_3 = - np.sqrt(3) * edge_length / 2
 
-# PONTOONS
+# PONTOONS (these remain the same for both sets of pontoons, the ones above the water and the ones below the water)
 # N° 1 is between floater 1 and 2; N° 2 is between floater 2 and 3
 y_p1 = 0
 y_p2 = (edge_length / 2) * np.sin(np.deg2rad(30))
@@ -177,14 +194,14 @@ z_CM_ff = h_out - h_bf / 2            # z center of front floater
 z_CM_bb = (h_bb / 2) - draft          # z center of back ballast
 z_CM_fb = (h_fb / 2) - draft          # z center of front ballast
 
-z_CM_pon = - D_pon / 2                # z center of pontoon, considering them
+z_CM_pon_above =  h_pontoon_above  # z center of pontoon, considering them - above the water level
                                       # immediately below the water level
 z_CM_hp = - draft + h_hp / 2          # z center of heave plates
 
 # z position of center of mass
 z_CM_tot = (2 * z_CM_tow * m_tow + 2 * z_hub * m_rot + 2 * z_CM_bf * m_bf +\
             2 * z_CM_bb * m_bb + z_CM_ff * m_ff + z_CM_fb * m_fb +\
-            3 * z_CM_pon * m_pon + 3 * z_CM_hp * m_hp) / m_tot
+                  3 * z_CM_pon_above * m_pon + 3 * z_CM_hp * m_hp) / m_tot
 
 print(f'The center of mass is at {z_CM_tot} m')
 
@@ -216,14 +233,14 @@ Vol_pon = np.pi * ((D_pon / 2)**2) * L_pon       # volume pontoons
 
 # x position of center of mass
 x_CB_tot = (Vol_1_sub * x_1 + Vol_2_sub * x_2 + Vol_3_sub * x_3 +\
-            Vol_pon * (x_p1 + x_p2 + x_p3) + Vol_hp * (x_1 + x_2 + x_3)) /\
+            Vol_hp * (x_1 + x_2 + x_3)) /\
             Vol_displaced
                     
 print(f'The center of bouyancy around y is at {x_CB_tot} m')
       
 # y position of center of mass              
 y_CB_tot = (Vol_1_sub * y_1 + Vol_2_sub * y_2 + Vol_3_sub * y_3 +\
-            Vol_pon * (y_p1 + y_p2 + y_p3) + Vol_hp * (y_1 + y_2 + y_3)) /\
+            Vol_hp * (y_1 + y_2 + y_3)) /\
             Vol_displaced
 
 print(f'The center of bouyancy around x is at {y_CB_tot} m')
@@ -330,73 +347,75 @@ I0_XY_fronthp = - m_hp * x_3 * y_3
 I0_XZ_fronthp = - m_hp * x_3 * z_CM_hp
 I0_YZ_fronthp = - m_hp * y_3 * z_CM_hp
 
-# Pontoon 1: it's a horizontal thick-walled cylinder
-I0_XX_pontoon_1 =  m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12 +\
-                   m_pon * (y_p1**2 + z_CM_pon**2) 
-I0_YY_pontoon_1 =  m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12 +\
-                   m_pon * (x_p1**2 + z_CM_pon**2)  
-I0_ZZ_pontoon_1 = 0.5 *m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2) +\
+
+
+# Pontoon 1 (upper set): it's a horizontal thick-walled cylindee
+I0_XX_pontoon_1_up =  m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12 +\
+                   m_pon * (y_p1**2 + z_CM_pon_above**2) 
+I0_YY_pontoon_1_up =  m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12 +\
+                   m_pon * (x_p1**2 + z_CM_pon_above**2)  
+I0_ZZ_pontoon_1_up = 0.5 *m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2) +\
                    m_pon * (x_p1**2 + y_p1**2)  
-I0_XY_pontoon_1 = - m_pon * x_p1 * y_p1
-I0_XZ_pontoon_1 = - m_pon * x_p1 * z_CM_pon
-I0_YZ_pontoon_1 = - m_pon * y_p1 * z_CM_pon
+I0_XY_pontoon_1_up = - m_pon * x_p1 * y_p1
+I0_XZ_pontoon_1_up = - m_pon * x_p1 * z_CM_pon_above
+I0_YZ_pontoon_1_up = - m_pon * y_p1 * z_CM_pon_above
 
 theta_2 = +30
-# Pontoon 2: it's a horizontal thick-walled cylinder
-I0_XX_pontoon_2 = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_2))**2) +\
+# Pontoon 2 (upper set): it's a horizontal thick-walled cylinder
+I0_XX_pontoon_2_up = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_2))**2) +\
                   (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2)) * (np.cos(np.deg2rad(theta_2))**2) +\
-                  m_pon * (y_p2**2 + z_CM_pon**2)
-I0_YY_pontoon_2 = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_2))**2) +\
+                  m_pon * (y_p2**2 + z_CM_pon_above**2)
+I0_YY_pontoon_2_up = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_2))**2) +\
                   (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2)) * (np.cos(np.deg2rad(theta_2))**2) +\
-                  m_pon * (x_p2**2 + z_CM_pon**2) 
-I0_ZZ_pontoon_2 = m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2) + L_pon**2) / 12 +\
+                  m_pon * (x_p2**2 + z_CM_pon_above**2) 
+I0_ZZ_pontoon_2_up = m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2) + L_pon**2) / 12 +\
                   m_pon * (x_p2**2 + y_p2**2)  
-I0_XY_pontoon_2 =  ((m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) -\
+I0_XY_pontoon_2_up =  ((m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) -\
                    (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2))) *\
                    np.sin(np.deg2rad(theta_2)) * np.cos(np.deg2rad(theta_2)) -\
                    m_pon * x_p2 * y_p2
-I0_XZ_pontoon_2 = - m_pon * x_p2 * z_CM_pon
-I0_YZ_pontoon_2 = - m_pon * y_p2 * z_CM_pon
+I0_XZ_pontoon_2_up = - m_pon * x_p2 * z_CM_pon_above
+I0_YZ_pontoon_2_up = - m_pon * y_p2 * z_CM_pon_above
 
 theta_3 = -30
-# Pontoon 3: it's a horizontal thick-walled cylinder
-I0_XX_pontoon_3 = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_3))**2) +\
+# Pontoon 3 (upper set): it's a horizontal thick-walled cylinder
+I0_XX_pontoon_3_up = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_3))**2) +\
                   (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2)) * (np.cos(np.deg2rad(theta_3))**2) +\
-                  m_pon * (y_p3**2 + z_CM_pon**2)
-I0_YY_pontoon_3 = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_3))**2) +\
+                  m_pon * (y_p3**2 + z_CM_pon_above**2)
+I0_YY_pontoon_3_up = (m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) * (np.sin(np.deg2rad(theta_3))**2) +\
                   (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2)) * (np.cos(np.deg2rad(theta_3))**2) +\
-                  m_pon * (x_p3**2 + z_CM_pon**2) 
-I0_ZZ_pontoon_3 = m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2) + L_pon**2) / 12 +\
+                  m_pon * (x_p3**2 + z_CM_pon_above**2) 
+I0_ZZ_pontoon_3_up = m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2) + L_pon**2) / 12 +\
                   m_pon * (x_p3**2 + y_p3**2)  
-I0_XY_pontoon_3 = ((m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) -\
+I0_XY_pontoon_3_up = ((m_pon * (3 * ((D_pon / 2)**2 + (D_pon_in / 2)**2)+ L_pon**2) / 12) -\
                    (0.5 * m_pon * ((D_pon / 2)**2 + (D_pon_in / 2)**2))) *\
                    np.sin(np.deg2rad(theta_3)) * np.cos(np.deg2rad(theta_3)) -\
                    m_pon * x_p3 * y_p3
-I0_XZ_pontoon_3 = - m_pon * x_p3 * z_CM_pon
-I0_YZ_pontoon_3 = - m_pon * y_p3 * z_CM_pon
+I0_XZ_pontoon_3_up = - m_pon * x_p3 * z_CM_pon_above
+I0_YZ_pontoon_3_up = - m_pon * y_p3 * z_CM_pon_above
 
 # sum of inertia components
 I0_XX = 2*(I0_XX_turb + I0_XX_tower + I0_XX_backball + I0_XX_backfloat + I0_XX_backhp) +\
         I0_XX_frontfloat + I0_XX_frontball + I0_XX_fronthp +\
-        I0_XX_pontoon_1 + I0_XX_pontoon_2 + I0_XX_pontoon_3
+        I0_XX_pontoon_1_up + I0_XX_pontoon_2_up + I0_XX_pontoon_3_up
 I0_YY = 2*(I0_YY_turb + I0_YY_tower + I0_YY_backball + I0_YY_backfloat + I0_YY_backhp) +\
         I0_YY_frontfloat + I0_YY_frontball + I0_YY_fronthp +\
-        I0_YY_pontoon_1 + I0_YY_pontoon_2 + I0_YY_pontoon_3
+        I0_YY_pontoon_1_up + I0_YY_pontoon_2_up + I0_YY_pontoon_3_up
 I0_ZZ = 2*(I0_ZZ_turb + I0_ZZ_tower + I0_ZZ_backball + I0_ZZ_backfloat + I0_ZZ_backhp) +\
         I0_ZZ_frontfloat + I0_ZZ_frontball + I0_ZZ_fronthp +\
-        I0_ZZ_pontoon_1 + I0_ZZ_pontoon_2 + I0_ZZ_pontoon_3
+        I0_ZZ_pontoon_1_up + I0_ZZ_pontoon_2_up + I0_ZZ_pontoon_3_up
 I0_XY = I0_XY_turb_1 + I0_XY_tower_1 + I0_XY_backball_1 + I0_XY_backfloat_1 + I0_XY_backhp_1 +\
         I0_XY_turb_2 + I0_XY_tower_2 + I0_XY_backball_2 + I0_XY_backfloat_2 + I0_XY_backhp_2 +\
         I0_XY_frontfloat + I0_XY_frontball + I0_XY_fronthp +\
-        I0_XY_pontoon_1 + I0_XY_pontoon_2 + I0_XY_pontoon_3
+        I0_XY_pontoon_1_up + I0_XY_pontoon_2_up + I0_XY_pontoon_3_up
 I0_XZ = I0_XZ_turb_1 + I0_XZ_tower_1 + I0_XZ_backball_1 + I0_XZ_backfloat_1 + I0_XZ_backhp_1 +\
         I0_XZ_turb_2 + I0_XZ_tower_2 + I0_XZ_backball_2 + I0_XZ_backfloat_2 + I0_XZ_backhp_2 +\
         I0_XZ_frontfloat + I0_XZ_frontball + I0_XZ_fronthp +\
-        I0_XZ_pontoon_1 + I0_XZ_pontoon_2 + I0_XZ_pontoon_3
+        I0_XZ_pontoon_1_up + I0_XZ_pontoon_2_up + I0_XZ_pontoon_3_up
 I0_YZ = I0_YZ_turb_1 + I0_YZ_tower_1 + I0_YZ_backball_1 + I0_YZ_backfloat_1 + I0_YZ_backhp_1 +\
         I0_YZ_turb_2 + I0_YZ_tower_2 + I0_YZ_backball_2 + I0_YZ_backfloat_2 + I0_YZ_backhp_2 +\
         I0_YZ_frontfloat + I0_YZ_frontball + I0_YZ_fronthp +\
-        I0_YZ_pontoon_1 + I0_YZ_pontoon_2 + I0_YZ_pontoon_3
+        I0_YZ_pontoon_1_up + I0_YZ_pontoon_2_up + I0_YZ_pontoon_3_up
 
 # force the symmetric terms around the X axis (I0_XY and I0_YZ) to be zero,
 # otherwise they could have some floating error
