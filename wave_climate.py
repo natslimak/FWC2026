@@ -91,6 +91,9 @@ TIME_clean = TIME[valid_mask]
 
 #%%  PEAK FREQUENCY ANALYSIS
 Hs_smooth = pd.Series(VHM0_clean).rolling(24*30).mean()
+fp = 1 / VTPK_clean  # Peak frequency in Hz
+T_smooth = pd.Series(VTPK_clean).rolling(24*30).mean()
+fp_smooth = pd.Series(fp).rolling(24*30).mean()
 
 # Plot of unfiltered significant wave height over time (1982-2026)
 fig, ax = plt.subplots(1, 1)
@@ -100,8 +103,8 @@ ax.plot(TIME_clean, VHM0_clean, linewidth=1, color='b', alpha=0.7, zorder=2,
         label='Unfiltered')
 ax.set_xlabel("Time [year]")
 ax.set_ylabel("Significant height [m]")
-# ax.set_title("Significant height over Time")
-ax.grid(which='major', alpha=0.4, zorder=1)
+ax.grid(which='major', alpha=0.5, zorder=1)
+ax.grid(which='minor', alpha=0.2, zorder=1)
 ax.set_ylim([0, 4])
 ax.set_xlim([TIME_clean[0], TIME_clean[-1]])
 ax.legend(loc='upper right', frameon=True)
@@ -113,10 +116,29 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
 
-
-fp = 1 / VTPK_clean  # Peak frequency in Hz
-# Averaging over ~1 month to see trends more clearly
-fp_smooth = pd.Series(fp).rolling(24*30).mean()
+# distribution of significant wave height
+fig, ax = plt.subplots(1, 1)
+bins = np.linspace(min(VHM0_clean), max(VHM0_clean), 50)
+ax.hist(VHM0_clean, bins=bins, density=False, alpha=0.7, color='b',
+        align='mid', linewidth=0.5, edgecolor="black", zorder=2,
+        label='Unfiltered')
+ax.hist(Hs_smooth, bins=bins, density=False, alpha=0.7, color='r',
+        align='mid', linewidth=0.5, edgecolor="black", zorder=3,
+        label='Monthly smoothed')
+ax.set_ylabel("N° of observations [-]")
+ax.set_xlabel("Significant height [m]")
+ax.grid(which='major', alpha=0.5, zorder=1)
+ax.grid(which='minor', alpha=0.2, zorder=1)
+ax.set_xlim([-0.1, 4])
+ax.set_ylim([0, None])
+ax.legend(loc='upper right', frameon=True)
+ax.minorticks_on()
+ax.tick_params(direction='in', which='major', length=10,
+               right=True, top =True, left=True, bottom=True)
+ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
+               labelright=False)
+ax.tick_params(direction='in', which='minor', length=5, bottom=True,
+               top=True, left=True, right=True)
 
 # Plot of unfiltered peak frequency over time (1982-2026)
 fig, ax = plt.subplots(1, 1)
@@ -126,11 +148,35 @@ ax.plot(TIME_clean, fp_smooth, linewidth=2, color='r', alpha=1, zorder=3,
         label='Monthly smoothed')
 ax.set_xlabel("Time [year]")
 ax.set_ylabel("Peak Frequency [Hz]")
-# ax.set_title("Peak Wave Frequency over Time")
 ax.set_ylim([0, 0.7])
 ax.set_xlim([TIME_clean[0], TIME_clean[-1]])
 ax.legend(loc='upper right', frameon=True)
-ax.grid(which='major', alpha=0.4, zorder=1)
+ax.grid(which='major', alpha=0.5, zorder=1)
+ax.grid(which='minor', alpha=0.2, zorder=1)
+ax.minorticks_on()
+ax.tick_params(direction='in', which='major', length=10,
+               right=True, top =True, left=True, bottom=True)
+ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
+               labelright=False)
+ax.tick_params(direction='in', which='minor', length=5, bottom=True,
+               top=True, left=True, right=True)
+
+# distribution of peak period
+fig, ax = plt.subplots(1, 1)
+bins = np.linspace(min(VTPK_clean), max(VTPK_clean), 50)
+ax.hist(VTPK_clean, bins=bins, density=False, alpha=0.7, color='b',
+        align='mid', linewidth=0.5, edgecolor="black", zorder=2,
+        label='Unfiltered')
+ax.hist(T_smooth, bins=bins, density=False, alpha=0.7, color='r',
+        align='mid', linewidth=0.5, edgecolor="black", zorder=3,
+        label='Monthly smoothed')
+ax.set_ylabel("N° of observations [-]")
+ax.set_xlabel("Wave peak period [s]")
+ax.grid(which='major', alpha=0.5, zorder=1)
+ax.grid(which='minor', alpha=0.2, zorder=1)
+# ax.set_xlim([-0.1, 4])
+ax.set_ylim([0, None])
+ax.legend(loc='upper right', frameon=True)
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
                right=True, top =True, left=True, bottom=True)
@@ -149,45 +195,61 @@ print(f"Mean Peak Frequency: {fp_mean:.3f} Hz")
 print(f"90th Percentile Peak Frequency: {fp_p90:.3f} Hz")
 print(f"Energy-Weighted Mean Peak Frequency: {fp_weighted:.3f} Hz")
 
-#%% SPECTRUM AND FREE SURFACE SIMULATION
+#%% JOINT DISTRIBUTION
 
-# Time for simulation
-t = np.linspace(0, 600, 2000) # [s]
+Hs = VHM0_clean
+Tp = VTPK_clean
 
-# Frequency domain
-f = np.linspace(0.02, 1, 200)
-df = f[1] - f[0]
+Hs_bins = np.arange(0, np.max(VHM0_clean) + 0.5, 0.5)
+Tp_bins = np.arange(0, np.max(VTPK_clean) + 1.0, 1.0)
 
-Hs = VHM0_clean[0]
-Tp = VTPK_clean[0]
 
-# Spectrum
-S = jonswap_spectrum(f, Hs, Tp)
+H, Hs_edges, Tp_edges = np.histogram2d(Hs, Tp, bins=[Hs_bins, Tp_bins])
 
-# Convert to amplitudes
-a = np.sqrt(2 * S * df)
+# Normalize to probability
+P = H / H.sum()
 
-# Random phases
-phi = np.random.uniform(0, 2*np.pi, len(f))
+# bin centers
+Hs_centers = 0.5 * (Hs_edges[:-1] + Hs_edges[1:])
+Tp_centers = 0.5 * (Tp_edges[:-1] + Tp_edges[1:])
 
-# Angular frequency
-omega = 2 * np.pi * f
+# Frequency range
+f = np.linspace(0.01, 1.0, 1000)
 
-# Build surface elevation
-eta = np.zeros_like(t)
+# Spectra for each sea state
+spectra = []
+weights = []
 
-for j in range(len(f)):
-    eta += a[j] * np.cos(omega[j]*t + phi[j])
+for i in range(len(Hs_centers)):
+    for j in range(len(Tp_centers)):
+        prob = P[i, j]
 
+        if prob == 0:
+            continue
+
+        Hs_rep = Hs_centers[i]
+        Tp_rep = Tp_centers[j]
+
+        S = jonswap_spectrum(f, Hs_rep, Tp_rep)
+
+        spectra.append(S)
+        weights.append(prob)
+
+# weighted mean spectrum
+spectra = np.array(spectra)
+weights = np.array(weights)
+S_mean = np.sum(spectra.T * weights, axis=1)
+
+# Joint distribution
 fig, ax = plt.subplots(1, 1)
-ax.plot(f, S, linewidth=2, color='b', alpha=1, zorder=3)
-ax.set_xlabel("Frequency [Hz]")
-ax.set_ylabel("Energy density")
-ax.set_title("JONSWAP Wave Spectrum")
+pcm = ax.pcolormesh(Hs_edges, Tp_edges, P.T, cmap='plasma')
+ax.set_xlabel("Hs [m]")
+ax.set_ylabel("Tp [s]")
 ax.grid(which='major', alpha=0.5, zorder=1)
-ax.grid(which='minor', alpha=0.2, zorder=1)
-ax.set_ylim([0, 3])
-ax.set_xlim([f[0], f[-1]])
+ax.set_xticks(Hs_edges)  # every 2 bins
+ax.set_yticks(Tp_edges[::2])
+ax.set_title("Joint Distribution")
+fig.colorbar(pcm, label="Probability", ax=ax)
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
                right=True, top =True, left=True, bottom=True)
@@ -195,6 +257,46 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
                labelright=False)
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
+
+# Example spectra
+fig, ax = plt.subplots(1, 1)
+ax.plot(f, S_mean, 'b', linewidth=2, alpha=1, zorder=2)
+ax.set_ylabel("S(f)")
+ax.set_xlabel("Frequency [Hz]")
+ax.set_title('Weighted mean JONSWAP spectrum')
+# ax.set_ylim([0, 0.7])
+ax.set_xlim([f[0], f[-1]])
+ax.grid(which='major', alpha=0.5, zorder=1)
+ax.grid(which='minor', alpha=0.2, zorder=1)
+ax.minorticks_on()
+ax.tick_params(direction='in', which='major', length=10,
+               right=True, top =True, left=True, bottom=True)
+ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
+               labelright=False)
+ax.tick_params(direction='in', which='minor', length=5, bottom=True,
+               top=True, left=True, right=True)
+#%% FREE SURFACE SIMULATION
+
+# Time array
+dt = 0.5                         # time step [s]
+T_total = 600                    # total duration [s]
+t = np.arange(0, T_total, dt)
+
+# Frequency spacing
+df = f[1] - f[0]
+
+# Random phases
+phi = 2 * np.pi * np.random.rand(len(f))
+
+# Amplitudes from spectrum
+A = np.sqrt(2 * S_mean * df)
+
+# Build free surface elevation
+eta = np.zeros_like(t)
+
+for i in range(len(f)):
+    eta += A[i] * np.cos(2 * np.pi * f[i] * t + phi[i])
+
 
 fig, ax = plt.subplots(1, 1)
 ax.plot(t, eta, linewidth=2, color='b', alpha=1, zorder=3)
