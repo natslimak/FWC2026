@@ -60,21 +60,25 @@ ROOT = Path(__file__).parent
 WAVE_FILE_PATH = ROOT /  'wave' / 'wave_climate_1982_2026.nc'
 ds = xr.open_dataset(WAVE_FILE_PATH)
 
+# Filter data just in summer
+ds['time'] = pd.to_datetime(ds['time'].values)
+
+# Filter summer months
+summer_ds = ds.where(ds['time.month'].isin([6, 7, 8, 9]), drop=True)
+
+
 TIME = pd.DatetimeIndex(ds.coords['time'])
+TIME_SUMMER = pd.DatetimeIndex(summer_ds.coords['time'])
 
-VHM0 = np.array(ds["VHM0"][:, 0, 0])  # sea surface wave significant height
-VHM0_WW = np.array(ds["VHM0_WW"][:, 0, 0])  # sea surface wind wave significant height
-VMDR = np.array(ds["VMDR"][:, 0, 0]) # Sea surface wave from direction
-VMDR_WW = np.array(ds["VMDR_WW"][:, 0, 0]) # Sea surface wind wave from direction
-VPED = np.array(ds["VPED"][:, 0, 0]) # Sea surface wave from direction at variance spectral density maximum
-VTM01_WW = np.array(ds["VTM01_WW"][:, 0, 0]) # Sea surface wind wave mean period
-VTM02 = np.array(ds["VTM02"][:, 0, 0]) # Sea surface wave mean period from variance spectral density second frequency moment
-VTM10 = np.array(ds["VTM10"][:, 0, 0]) # Sea surface wave mean period from variance spectral density inverse frequency moment
-VTPK = np.array(ds["VTPK"][:, 0, 0]) # Sea surface wave period at variance spectral density maximum
-
-# The time is every 3 hours
-print("TIME:", TIME)
-
+VHM0 = np.array(summer_ds["VHM0"][:, 0, 0])  # sea surface wave significant height
+VHM0_WW = np.array(summer_ds["VHM0_WW"][:, 0, 0])  # sea surface wind wave significant height
+VMDR = np.array(summer_ds["VMDR"][:, 0, 0]) # Sea surface wave from direction
+VMDR_WW = np.array(summer_ds["VMDR_WW"][:, 0, 0]) # Sea surface wind wave from direction
+VPED = np.array(summer_ds["VPED"][:, 0, 0]) # Sea surface wave from direction at variance spectral density maximum
+VTM01_WW = np.array(summer_ds["VTM01_WW"][:, 0, 0]) # Sea surface wind wave mean period
+VTM02 = np.array(summer_ds["VTM02"][:, 0, 0]) # Sea surface wave mean period from variance spectral density second frequency moment
+VTM10 = np.array(summer_ds["VTM10"][:, 0, 0]) # Sea surface wave mean period from variance spectral density inverse frequency moment
+VTPK = np.array(summer_ds["VTPK"][:, 0, 0]) # Sea surface wave period at variance spectral density maximum
 
 #%%  CLEANING DATA
 
@@ -87,7 +91,7 @@ valid_mask = (~np.isnan(VTPK))
 
 VTPK_clean = VTPK[valid_mask]
 VHM0_clean = VHM0[valid_mask]
-TIME_clean = TIME[valid_mask]
+TIME_clean = TIME_SUMMER[valid_mask]
 
 #%%  PEAK FREQUENCY ANALYSIS
 Hs_smooth = pd.Series(VHM0_clean).rolling(24*30).mean()
@@ -197,43 +201,52 @@ print(f"Energy-Weighted Mean Peak Frequency: {fp_weighted:.3f} Hz")
 
 #%% JOINT DISTRIBUTION
 
-Hs = VHM0_clean
-Tp = VTPK_clean
 
-Hs_bins = np.arange(0, np.max(VHM0_clean) + 0.5, 0.5)
-Tp_bins = np.arange(0, np.max(VTPK_clean) + 1.0, 1.0)
+Hs = VHM0_clean   # significant wave height
+Tp = VTPK_clean   # peak period
 
+
+Hs_bins = np.arange(0, np.max(Hs) + 0.5, 0.5)
+Tp_bins = np.arange(0, np.max(Tp) + 1.0, 1.0)
 
 H, Hs_edges, Tp_edges = np.histogram2d(Hs, Tp, bins=[Hs_bins, Tp_bins])
 
-# Normalize to probability
-P = H / H.sum()
+P = H / np.sum(H)
 
-# bin centers
 Hs_centers = 0.5 * (Hs_edges[:-1] + Hs_edges[1:])
 Tp_centers = 0.5 * (Tp_edges[:-1] + Tp_edges[1:])
 
-# Frequency range
 f = np.linspace(0.01, 1.0, 1000)
 
-# Spectra for each sea state
 spectra = []
 weights = []
+max_peak_f = []
 
-for i in range(len(Hs_centers)):
-    for j in range(len(Tp_centers)):
+start_Tp_idx = 3   # skip very low Tp values
+
+for i in range(len(Hs_centers[:1])):  # currently only lowest Hs bin
+    for j in range(start_Tp_idx, min(5, len(Tp_centers))):
+
         prob = P[i, j]
 
+        # Skip non-occurring sea states
         if prob == 0:
             continue
 
+        # Representative values
         Hs_rep = Hs_centers[i]
         Tp_rep = Tp_centers[j]
 
+        # Compute spectrum
         S = jonswap_spectrum(f, Hs_rep, Tp_rep)
 
+        # Store results
         spectra.append(S)
         weights.append(prob)
+
+        # Store peak frequency
+        peak_idx = np.argmax(S)
+        max_peak_f.append(f[peak_idx])
 
 # weighted mean spectrum
 spectra = np.array(spectra)
@@ -261,9 +274,13 @@ ax.tick_params(direction='in', which='minor', length=5, bottom=True,
 # Example spectra
 fig, ax = plt.subplots(1, 1)
 ax.plot(f, S_mean, 'b', linewidth=2, alpha=1, zorder=2)
+for max_f in max_peak_f:
+    ax.axvline(max_f, color='r', linewidth=2, alpha=1, zorder=3, linestyle='--',
+               label=f'Peak frequency {max_f:.2} Hz')
 ax.set_ylabel("S(f)")
 ax.set_xlabel("Frequency [Hz]")
 ax.set_title('Weighted mean JONSWAP spectrum')
+ax.legend(loc='upper right', frameon=False)
 # ax.set_ylim([0, 0.7])
 ax.set_xlim([f[0], f[-1]])
 ax.grid(which='major', alpha=0.5, zorder=1)
@@ -305,7 +322,7 @@ ax.set_ylabel("Surface elevation [m]")
 ax.set_title("Simulated Free Surface Elevation")
 ax.grid(which='major', alpha=0.5, zorder=1)
 ax.grid(which='minor', alpha=0.2, zorder=1)
-ax.set_ylim([-1.5, 1.5])
+ax.set_ylim([-0.3, 0.3])
 ax.set_xlim([t[0], t[-1]])
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
