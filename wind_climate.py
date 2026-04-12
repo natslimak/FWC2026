@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,11 +21,14 @@ plt.rcParams.update({
 # ----------------------------
 # WIND speed
 # ----------------------------
-
 df = pd.read_csv("wind\windSpeed.csv") # this files are at 10 m
 percentile = df["perc"]        # percentiles
 wind_speed = df["val"]         # wind speed [m/s]
-mean_speed = wind_speed.mean()
+count= df["count"]              # count of measurements
+freq = np.diff(np.insert(count, 0, 0))
+pdf = freq / np.sum(freq)
+mean_speed = np.sum(wind_speed * pdf)                
+
 print("Mean wind speed (aprox):", mean_speed) # Calculate the mean wind spee
 
 # ----------------------------
@@ -55,7 +60,13 @@ power_density = df["val"]
 rho= 1.225
 D= 1.2
 A= np.pi * (D/2)**2
-Cp= 0.2
+
+with open("curves.json", "r") as f:
+    data = json.load(f)
+
+wind_speed_curve = data["wind_speed"]
+Cp_curve = data["Cp"]
+Ct_curve = data["Ct"]
 
 # ----------------------------
 # Log Law? 
@@ -64,34 +75,40 @@ z_ref = 10 # reference height (10 m)
 z = 1.2 # height of the turbine hub 
 z0 = 0.003  # roughness length (for open terrain)
 V12 = wind_speed * (np.log(z / z0) / np.log(z_ref / z0)) 
-mean_v12 = V12.mean()
-print("Mean wind speed (aprox):", mean_v12) # Calculate the mean wind speed (approximate)
+Cp = np.interp(V12, wind_speed_curve, Cp_curve)
+Ct = np.interp(V12, wind_speed_curve, Ct_curve)
+mean_v12 = np.sum(V12 * pdf)
+print("Mean wind speed at hub height:", mean_v12) # Calculate the mean wind speed (approximate)
 
 # Wind Power
+
+
 P_wind = 0.5 * rho * A * (V12**3)
 # Power extracted by the turbine
-P_turbine = Cp * P_wind
-# ----------------------------
-# Add to DataFrame
-# ----------------------------
-df["V_1.2m"] = V12
-df["P_wind_W"] = P_wind
-df["P_turbine_W"] = P_turbine
+P_turbine =  P_wind * Cp
+
+T= 0.5 * rho * A * (V12**2) * Ct
+df["V12"] = V12
+df["Cp"] = Cp
+df["Ct"] = Ct
+df["T_N"] = T
+df["P_turbine"] = P_turbine
 
 print(df.head())
 
 # ----------------------------
 # Mean Power
 # ----------------------------
-print("\nMean Wind Power (W):", np.mean(P_wind))
+
 print("Mean Turbine Power (W):", np.mean(P_turbine))
+print("Mean Thrust (N):", np.mean(T))
 # ----------------------------
 # AEP
 # ----------------------------
-p = df["perc"].values / 100
-pdf = np.diff(np.insert(p, 0, 0))
+
+pdf = np.diff(np.insert(count, 0, 0))
 pdf = pdf / np.sum(pdf)
-P = df["P_turbine_W"].values
+P = df["P_turbine"].values
 AEP_Wh = np.sum(P * pdf * 8760)
 AEP_kWh = AEP_Wh / 1000
 print("AEP (Wh/year):", AEP_Wh)
@@ -111,6 +128,9 @@ print("Mean Turbulence Intensity:", mean_TI)
 # ----------------------------
 # PLOT WIND speed
 # ----------------------------
+
+
+
 
 plt.figure(figsize=(10,5))
 plt.plot(percentile, wind_speed, marker='o')
@@ -149,7 +169,7 @@ plt.grid(True)
 # wind at V1.2 m
 # ----------------------------
 plt.figure(figsize=(10,5))
-plt.plot(df["perc"], df["V_1.2m"], marker='o')
+plt.plot(df["perc"], df["V12"], marker='o')
 
 plt.title("Wind Speed at 1.2 m (corrected)")
 plt.xlabel("Percentile (%)")
@@ -158,26 +178,16 @@ plt.grid(True)
 # ----------------------------
 # Wind Poer
 # ----------------------------
-plt.figure(figsize=(10,5))
-plt.plot(df["V_1.2m"], df["P_wind_W"], marker='o')
 
-plt.title("Wind Power Available")
-plt.xlabel("Wind speed (m/s)")
-plt.ylabel("Power (W)")
-plt.grid(True)
 
 # ----------------------------
 # Turbine Power
 # ----------------------------
 plt.figure(figsize=(10,5))
-plt.plot(df["V_1.2m"], df["P_turbine_W"], marker='o')
+plt.plot(df["V12"], df["P_turbine"], marker='o')
 
 plt.title("Turbine Power Output (Cp model)")
 plt.xlabel("Wind speed (m/s)")
 plt.ylabel("Power (W)")
 plt.grid(True)
 plt.show()
-
-
-
-
