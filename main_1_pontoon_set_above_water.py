@@ -38,10 +38,10 @@ h_bf = 0.5         # Back floater height, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
-D_b = 0.25          # Back floater Diameter [m]
-D_b_in = 0.245      # Back floater inner diameter [m]
+D_b = 0.27          # Back floater Diameter [m]
+D_b_in = 0.26      # Back floater inner diameter [m]
 D_f = 0.27          # Front floater Diameter [m]
-D_f_in = 0.265    # Front floater inner diameter [m]
+D_f_in = 0.26    # Front floater inner diameter [m]
 
 # pontoons parameters
 D_pon = 0.1        # Outer iameter of the pontton [m]
@@ -177,13 +177,19 @@ x_3 = - np.sqrt(3) * edge_length / 2
 
 # PONTOONS (these remain the same for both sets of pontoons, the ones above the water and the ones below the water)
 # N° 1 is between floater 1 and 2; N° 2 is between floater 2 and 3
+# y_p1 = 0
+# y_p2 = (edge_length / 2) * np.sin(np.deg2rad(30))
+# y_p3 = - y_p2
+# x_p1 = 0
+# x_p2 = -(edge_length / 2) * np.sin(np.deg2rad(60))
+# x_p3 = x_p2
+
 y_p1 = 0
-y_p2 = (edge_length / 2) * np.sin(np.deg2rad(30))
+y_p2 = (edge_length / 2) * (1 - np.cos(np.deg2rad(60)))
 y_p3 = - y_p2
 x_p1 = 0
-x_p2 = -(edge_length / 2) * np.sin(np.deg2rad(60))
+x_p2 = (edge_length / 2) * np.sin(np.deg2rad(60))
 x_p3 = x_p2
-
 #%% CM COORDINATES    
 
 z_CM_tow = (z_hub - h_out) / 2        # z center of mass tower
@@ -662,6 +668,10 @@ C_tot = C_hydro + C_mooring
 CoMA = np.linalg.solve(M + A, C_tot)
 eigVal, eigVec = np.linalg.eig(CoMA)
 
+for i in range(6):
+    print(f"\nMode {i}")
+    print(eigVec[:, i])
+
 # eliminate floating errors
 eigVal[np.abs(eigVal) < 1e-10] = 0
 
@@ -670,12 +680,12 @@ omega_nat = np.sqrt(eigVal)
 f_nat = omega_nat / (2 * np.pi)
 
 # Display natural frequencies
-print(f'Surge period: {f_nat[0]:.2f} [Hz]')
-print(f'Sway period: {f_nat[1]:.2f} [Hz]')
-print(f'Heave period: {f_nat[2]:.2f} [Hz]')
-print(f'Roll period: {f_nat[3]:.2f} [Hz]')
-print(f'Pitch period: {f_nat[4]:.2f} [Hz]')
-print(f'Yaw period: {f_nat[5]:.2f} [Hz]')
+print(f'Surge period: {f_nat[3]:.2f} [Hz]')
+print(f'Sway period: {f_nat[4]:.2f} [Hz]')
+print(f'Heave period: {f_nat[0]:.2f} [Hz]')
+print(f'Roll period: {f_nat[5]:.2f} [Hz]')
+print(f'Pitch period: {f_nat[1]:.2f} [Hz]')
+print(f'Yaw period: {f_nat[2]:.2f} [Hz]')
 
 
 
