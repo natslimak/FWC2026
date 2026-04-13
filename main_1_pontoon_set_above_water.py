@@ -38,14 +38,14 @@ h_bf = 0.5         # Back floater height, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
-D_b = 0.27          # Back floater Diameter [m]
-D_b_in = 0.26      # Back floater inner diameter [m]
-D_f = 0.27          # Front floater Diameter [m]
-D_f_in = 0.26    # Front floater inner diameter [m]
+D_b = 0.25          # Back floater Diameter [m]
+D_b_in = 0.249      # Back floater inner diameter [m]
+D_f = 0.25          # Front floater Diameter [m]
+D_f_in = 0.249    # Front floater inner diameter [m]
 
 # pontoons parameters
-D_pon = 0.1        # Outer iameter of the pontton [m]
-D_pon_in = 0.09  # Inner diameter of pontoon [m]
+D_pon = 0.11        # Outer iameter of the pontton [m]
+D_pon_in = 0.1  # Inner diameter of pontoon [m]
 
 # heave plate
 D_hp = 0.3         # Diameter heave plate [m]
