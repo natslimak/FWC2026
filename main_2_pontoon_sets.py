@@ -26,6 +26,7 @@ rho_pvc = 1400      # PVC density [kg/m^3]
 rho_gf = 2460       # glass fiber density [kg/m^3]
 rho_pla = 1240       # PLA density [kg/m^3]
 rho_al = 2710
+weight_per_m = 0.49 # kg/m
 
 
 # tower and rotor parameters
@@ -39,18 +40,18 @@ h_bf = 0.5         # Back floater height, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
-D_b = 0.25          # Back floater Diameter [m]
-D_b_in = 0.215      # Back floater inner diameter [m]
-D_f = 0.25          # Front floater Diameter [m]
-D_f_in = 0.215    # Front floater inner diameter [m]
+D_b = 0.315          # Back floater Diameter [m]
+D_b_in = 0.305      # Back floater inner diameter [m]
+D_f = 0.315          # Front floater Diameter [m]
+D_f_in = 0.305   # Front floater inner diameter [m]
 
 # pontoons parameters
 D_pon = 0.040        # Outer iameter of the pontton [m]
 D_pon_in = 0.0385  # Inner diameter of pontoon [m]
 
 # heave plate
-D_hp = 0.255         # Diameter heave plate [m]
-h_hp = 0.005       # Height heave plate [m]
+D_hp = 0.350        # Diameter heave plate [m]
+h_hp = 0.01       # Height heave plate [m]
  
 # draft
 draft = 0.3        # draft [m]
@@ -119,7 +120,8 @@ h_pontoon_above = 0.1  # from the water level to the centre of pontoon above wat
 m_tow = rho_pvc * np.pi * ((D_tow / 2)**2 - (D_tow_in / 2)**2) * h_left  # [kg]
 
 # mass pontoons
-m_pon = rho_al * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg] 
+# m_pon = rho_al * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg] 
+m_pon = weight_per_m * L_pon
 
 # mass heave plate
 m_hp =  rho_pla * A_hp * h_hp
