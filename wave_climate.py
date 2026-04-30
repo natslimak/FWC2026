@@ -13,12 +13,12 @@ import matplotlib as mpl
 mpl.rcParams['figure.figsize'] = (16, 10)
 
 # Font size of label, title, and legend
-mpl.rcParams['font.size'] = 25
-mpl.rcParams['xtick.labelsize'] = 25
-mpl.rcParams['ytick.labelsize'] = 25
-mpl.rcParams['axes.labelsize'] = 25
-mpl.rcParams['axes.titlesize'] = 25
-mpl.rcParams['legend.fontsize'] = 25
+mpl.rcParams['font.size'] = 40
+mpl.rcParams['xtick.labelsize'] = 40
+mpl.rcParams['ytick.labelsize'] = 40
+mpl.rcParams['axes.labelsize'] = 45
+mpl.rcParams['axes.titlesize'] = 45
+mpl.rcParams['legend.fontsize'] = 40
 
 # Lines and markers
 mpl.rcParams['lines.linewidth'] = 1.5
@@ -46,11 +46,11 @@ def jonswap_spectrum(f, Hs, Tp, gamma=3.3):
            np.exp(-1.25 * (f / fp)**(-4))
 
     # Peak enhancement term
-    exponent = np.exp(-0.5 * ((f / fp - 1) / sigma)**2)
-    peak_enhancement = gamma**exponent
+    # exponent = np.exp(-0.5 * ((f / fp - 1) / sigma)**2)
+    # peak_enhancement = gamma**exponent
 
     # Final JONSWAP spectrum
-    S = S_pm * peak_enhancement
+    S = S_pm
 
     return S
 
@@ -123,19 +123,19 @@ ax.tick_params(direction='in', which='minor', length=5, bottom=True,
 # distribution of significant wave height
 fig, ax = plt.subplots(1, 1)
 bins = np.linspace(min(VHM0_clean), max(VHM0_clean), 50)
-ax.hist(VHM0_clean, bins=bins, density=False, alpha=0.7, color='b',
+ax.hist(VHM0_clean, bins=bins, density=True, alpha=0.7, color='b',
         align='mid', linewidth=0.5, edgecolor="black", zorder=2,
         label='Unfiltered')
-ax.hist(Hs_smooth, bins=bins, density=False, alpha=0.7, color='r',
+ax.hist(Hs_smooth, bins=bins, density=True, alpha=0.7, color='r',
         align='mid', linewidth=0.5, edgecolor="black", zorder=3,
         label='Monthly smoothed')
-ax.set_ylabel("N° of observations [-]")
-ax.set_xlabel("Significant height [m]")
+ax.set_ylabel(r"$PDF$")
+ax.set_xlabel(r"$H_s\:\text{[m]}$")
 ax.grid(which='major', alpha=0.5, zorder=1)
 ax.grid(which='minor', alpha=0.2, zorder=1)
-ax.set_xlim([-0.1, 4])
+ax.set_xlim([-0.1, 2])
 ax.set_ylim([0, None])
-ax.legend(loc='upper right', frameon=True)
+ax.legend(loc='upper right', frameon=False)
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
                right=True, top =True, left=True, bottom=True)
@@ -143,6 +143,7 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
                labelright=False)
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
+fig.savefig(str(ROOT) +  "/wave" + "/summer_Hs" + ".pdf")
 
 # Plot of unfiltered peak frequency over time (1982-2026)
 fig, ax = plt.subplots(1, 1)
@@ -168,19 +169,19 @@ ax.tick_params(direction='in', which='minor', length=5, bottom=True,
 # distribution of peak period
 fig, ax = plt.subplots(1, 1)
 bins = np.linspace(min(VTPK_clean), max(VTPK_clean), 50)
-ax.hist(VTPK_clean, bins=bins, density=False, alpha=0.7, color='b',
+ax.hist(VTPK_clean, bins=bins, density=True, alpha=0.7, color='b',
         align='mid', linewidth=0.5, edgecolor="black", zorder=2,
         label='Unfiltered')
-ax.hist(T_smooth, bins=bins, density=False, alpha=0.7, color='r',
+ax.hist(T_smooth, bins=bins, density=True, alpha=0.7, color='r',
         align='mid', linewidth=0.5, edgecolor="black", zorder=3,
         label='Monthly smoothed')
-ax.set_ylabel("N° of observations [-]")
-ax.set_xlabel("Wave peak period [s]")
+ax.set_ylabel(r"$PDF$")
+ax.set_xlabel(r"$T_p\:\text{[s]}$")
 ax.grid(which='major', alpha=0.5, zorder=1)
 ax.grid(which='minor', alpha=0.2, zorder=1)
-# ax.set_xlim([-0.1, 4])
+ax.set_xlim([-0.1, 13])
 ax.set_ylim([0, None])
-ax.legend(loc='upper right', frameon=True)
+ax.legend(loc='upper right', frameon=False)
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
                right=True, top =True, left=True, bottom=True)
@@ -188,6 +189,7 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
                labelright=False)
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
+fig.savefig(str(ROOT) +  "/wave" + "/summer_Tp" + ".pdf")
 
 # Statistical analysis of peak frequency
 fp_mean = np.mean(fp)          # Typical sea state
@@ -197,8 +199,13 @@ fp_weighted = np.sum(fp * weights) / np.sum(weights)
 
 print(f"Mean Peak Frequency: {fp_mean:.3f} Hz")
 print(f"90th Percentile Peak Frequency: {fp_p90:.3f} Hz")
-print(f"Energy-Weighted Mean Peak Frequency: {fp_weighted:.3f} Hz")
 
+# Statistical analysis of significant height
+Hs_mean = np.mean(VHM0_clean)          # Typical sea state
+Hs_p90 = np.percentile(VHM0_clean, 90) # More engergetic / extreme sea state
+
+print(f"Mean Peak Frequency: {Hs_mean:.3f} m")
+print(f"90th Percentile Peak Frequency: {Hs_p90:.3f} m")
 #%% JOINT DISTRIBUTION
 
 
@@ -256,12 +263,11 @@ S_mean = np.sum(spectra.T * weights, axis=1)
 # Joint distribution
 fig, ax = plt.subplots(1, 1)
 pcm = ax.pcolormesh(Hs_edges, Tp_edges, P.T, cmap='plasma')
-ax.set_xlabel("Hs [m]")
-ax.set_ylabel("Tp [s]")
+ax.set_xlabel(r"$H_s\:\text{[m]}$")
+ax.set_ylabel(r"$T_p\:\text{[s]}$")
 ax.grid(which='major', alpha=0.5, zorder=1)
 ax.set_xticks(Hs_edges)  # every 2 bins
-ax.set_yticks(Tp_edges[::2])
-ax.set_title("Joint Distribution")
+ax.set_yticks(Tp_edges[1::2])
 fig.colorbar(pcm, label="Probability", ax=ax)
 ax.minorticks_on()
 ax.tick_params(direction='in', which='major', length=10,
@@ -270,17 +276,16 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
                labelright=False)
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
-
+fig.savefig(str(ROOT) +  "/wave" + "/joint_distribution" + ".pdf")
 # Example spectra
 fig, ax = plt.subplots(1, 1)
 ax.plot(f, S_mean, 'b', linewidth=2, alpha=1, zorder=2)
-for max_f in max_peak_f:
-    ax.axvline(max_f, color='r', linewidth=2, alpha=1, zorder=3, linestyle='--',
-               label=f'Peak frequency {max_f:.2} Hz')
-ax.set_ylabel("S(f)")
-ax.set_xlabel("Frequency [Hz]")
-ax.set_title('Weighted mean JONSWAP spectrum')
-ax.legend(loc='upper right', frameon=False)
+# for max_f in max_peak_f:
+#     ax.axvline(max_f, color='r', linewidth=2, alpha=1, zorder=3, linestyle='--',
+#                label=fr'$f_p$ {max_f:.2} Hz')
+ax.set_ylabel(r"$S(f)$")
+ax.set_xlabel(r"$f\:\text{[Hz]}$")
+# ax.legend(loc='upper right', frameon=False)
 # ax.set_ylim([0, 0.7])
 ax.set_xlim([f[0], f[-1]])
 ax.grid(which='major', alpha=0.5, zorder=1)
@@ -292,6 +297,8 @@ ax.tick_params(labelbottom=True, labeltop=False, labelleft=True,
                labelright=False)
 ax.tick_params(direction='in', which='minor', length=5, bottom=True,
                top=True, left=True, right=True)
+fig.savefig(str(ROOT) +  "/wave" + "/final_spectrum" + ".pdf")
+
 #%% FREE SURFACE SIMULATION
 
 # Time array
