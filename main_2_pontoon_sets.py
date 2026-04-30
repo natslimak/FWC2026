@@ -25,12 +25,14 @@ rhoa = 1.29         # Air density [kg/m^3]
 rho_pvc = 1400      # PVC density [kg/m^3]
 rho_gf = 2460       # glass fiber density [kg/m^3]
 rho_pla = 1240       # PLA density [kg/m^3]
+rho_al = 2710
+weight_per_m = 0.49 # kg/m
 
 
 # tower and rotor parameters
 z_hub = 1.2        # tower height above SWL [kg]
-D_tow = 0.15    # tower outer diameter [m]
-D_tow_in = 0.14    # tower inner diameter [m]
+D_tow = 0.04    # tower outer diameter [m]
+D_tow_in = 0.03    # tower inner diameter [m]
 D_rot = 1.2        # rotor diameter [m]
 
 # floater and ballast parameters
@@ -38,25 +40,25 @@ h_bf = 0.5         # Back floater height, including ballast [m]
 h_ff = 0.5         # Front floater hight, including ballast [m] 
 h_bb = 0.2         # Back Ballast height [m]
 h_fb = 0.2         # Front Ballast height [m] 
-D_b = 0.2          # Back floater Diameter [m]
-D_b_in = 0.19      # Back floater inner diameter [m]
-D_f = 0.25          # Front floater Diameter [m]
-D_f_in = 0.24    # Front floater inner diameter [m]
+D_b = 0.315          # Back floater Diameter [m]
+D_b_in = 0.305      # Back floater inner diameter [m]
+D_f = 0.315          # Front floater Diameter [m]
+D_f_in = 0.305   # Front floater inner diameter [m]
 
 # pontoons parameters
-D_pon = 0.049        # Outer iameter of the pontton [m]
-D_pon_in = 0.041  # Inner diameter of pontoon [m]
+D_pon = 0.040        # Outer iameter of the pontton [m]
+D_pon_in = 0.0385  # Inner diameter of pontoon [m]
 
 # heave plate
-D_hp = 0.3         # Diameter heave plate [m]
-h_hp = 0.03       # Height heave plate [m]
+D_hp = 0.350        # Diameter heave plate [m]
+h_hp = 0.01       # Height heave plate [m]
  
 # draft
 draft = 0.3        # draft [m]
 
 # maximum thrust and pitch allowed
-T = 85             # max thrust per rotor [N]
-max_pitch = 10     # maximum pitch angle [deg]
+T = 110             # max thrust per rotor [N]
+max_pitch = 8     # maximum pitch angle [deg]
 
 #%% FLOATER AND PONTOON FRONTAL AREAS
 A_back = np.pi * D_b**2 / 4              # Sectional area back cylinder [m^2]
@@ -92,6 +94,7 @@ def equation(L):
 # one floater center and another one
 edge_length = solve_equation(equation, 2)
 L_pon = edge_length - D_b
+# L_pon = 2
 
 print(f'The pontoons are {L_pon:2} m long')
 
@@ -117,7 +120,8 @@ h_pontoon_above = 0.1  # from the water level to the centre of pontoon above wat
 m_tow = rho_pvc * np.pi * ((D_tow / 2)**2 - (D_tow_in / 2)**2) * h_left  # [kg]
 
 # mass pontoons
-m_pon = rho_pvc * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg] 
+# m_pon = rho_al * np.pi * ((D_pon / 2)**2 - (D_pon_in / 2)**2) * L_pon   # [kg] 
+m_pon = weight_per_m * L_pon
 
 # mass heave plate
 m_hp =  rho_pla * A_hp * h_hp
@@ -177,11 +181,18 @@ x_3 = - np.sqrt(3) * edge_length / 2
 
 # PONTOONS (these remain the same for both sets of pontoons, the ones above the water and the ones below the water)
 # N° 1 is between floater 1 and 2; N° 2 is between floater 2 and 3
+# y_p1 = 0
+# y_p2 = (edge_length / 2) * np.sin(np.deg2rad(30))
+# y_p3 = - y_p2
+# x_p1 = 0
+# x_p2 = -(edge_length / 2) * np.sin(np.deg2rad(60))
+# x_p3 = x_p2
+
 y_p1 = 0
-y_p2 = (edge_length / 2) * np.sin(np.deg2rad(30))
+y_p2 = (edge_length / 2) * (1 - np.cos(np.deg2rad(60)))
 y_p3 = - y_p2
 x_p1 = 0
-x_p2 = -(edge_length / 2) * np.sin(np.deg2rad(60))
+x_p2 = (edge_length / 2) * np.sin(np.deg2rad(60))
 x_p3 = x_p2
 
 #%% CM COORDINATES    
@@ -714,6 +725,10 @@ C_tot = C_hydro + C_mooring
 CoMA = np.linalg.solve(M + A, C_tot)
 eigVal, eigVec = np.linalg.eig(CoMA)
 
+for i in range(6):
+    print(f"\nMode {i}")
+    print(eigVec[:, i])
+
 # eliminate floating errors
 eigVal[np.abs(eigVal) < 1e-10] = 0
 
@@ -722,12 +737,12 @@ omega_nat = np.sqrt(eigVal)
 f_nat = omega_nat / (2 * np.pi)
 
 # Display natural frequencies
-print(f'Surge period: {f_nat[0]:.2f} [Hz]')
-print(f'Sway period: {f_nat[1]:.2f} [Hz]')
-print(f'Heave period: {f_nat[2]:.2f} [Hz]')
-print(f'Roll period: {f_nat[3]:.2f} [Hz]')
-print(f'Pitch period: {f_nat[4]:.2f} [Hz]')
-print(f'Yaw period: {f_nat[5]:.2f} [Hz]')
+print(f'Surge period: {f_nat[3]:.2f} [Hz]')
+print(f'Sway period: {f_nat[4]:.2f} [Hz]')
+print(f'Heave period: {f_nat[0]:.2f} [Hz]')
+print(f'Roll period: {f_nat[5]:.2f} [Hz]')
+print(f'Pitch period: {f_nat[1]:.2f} [Hz]')
+print(f'Yaw period: {f_nat[2]:.2f} [Hz]')
 
 
 
