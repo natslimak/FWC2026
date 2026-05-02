@@ -35,7 +35,17 @@ mpl.rcParams['savefig.bbox'] = "tight"
 #%%  FUNCTIONS
 
 # JONSWAP spectrum function
-def jonswap_spectrum(f, Hs, Tp, gamma=3.3):
+def jonswap_spectrum(f, Hs, Tp):
+    
+    value_for_gamma = Tp / np.sqrt(Hs)
+    
+    if value_for_gamma <= 3.6:
+        gamma = 5
+    elif value_for_gamma > 3.6 and value_for_gamma <= 5:
+        gamma = np.exp(5.75 - 1.15 * value_for_gamma)
+    else:
+        gamma = 1
+    
     fp = 1.0 / Tp
 
     # Sigma definition
@@ -46,11 +56,11 @@ def jonswap_spectrum(f, Hs, Tp, gamma=3.3):
            np.exp(-1.25 * (f / fp)**(-4))
 
     # Peak enhancement term
-    # exponent = np.exp(-0.5 * ((f / fp - 1) / sigma)**2)
-    # peak_enhancement = gamma**exponent
+    exponent = np.exp(-0.5 * ((f / fp - 1) / sigma)**2)
+    peak_enhancement = (1 - 0.287 * np.log(gamma)) * gamma**exponent
 
     # Final JONSWAP spectrum
-    S = S_pm
+    S = S_pm * peak_enhancement
 
     return S
 

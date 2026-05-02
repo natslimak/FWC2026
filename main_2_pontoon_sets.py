@@ -542,42 +542,164 @@ M = np.array([  [M11, M12, M13, M14, M15, M16],
                 [M51, M52, M53, M54, M55, M56],
                 [M61, M62, M63, M64, M65, M66]])
 
-#%% ADDED MASS MATRIX
+#%% ADDED MASS AND DAMPING MATRIX
 
-A = M
+A_11 = 5.562031E-02
+B_11 = 2.201697E-03
 
-# Heave coupled components of added mass matrix changing because of heave plate
-m_a_heave_plate = (1/3) * rhow * (D_hp**3) # For one heave plate 
-                                           # (According to L.Tao et.al.--> Eq. 24)
-m_a_total = 3 * m_a_heave_plate            # For three heave plates, assuming
-                                           # that the heave plates are seperated
-                                           # such that they don't interact with
-                                           # each other
+A_12 = -1.376810E-05
+B_12 = -1.417690E-06
 
-A33 = m_a_total                         # Heave-heave
-A34 = m_a_total * (y_1 + y_2 + y_3)     # Heave-roll
-A35 = - m_a_total * (x_1 + x_2 + x_3)   # Heave-pitch
-A43 = A34                               # Roll-heave
-A53 = A35                               # Pitch-heave
+A_13 = -1.823758E-05
+B_13 = -1.044513E-05
 
-# Rewrite surge and sway components with columns and pontoons contribution
-A11 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
-      rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
-      rhow * np.pi * D_pon**2 / 4 * L_pon * (1 + 2 * np.sin(np.deg2rad(60))**2)
-A22 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
-      rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
-      rhow * np.pi * D_pon**2 / 4 * L_pon * (0 + 2 * np.sin(np.deg2rad(30))**2)
-A33 += 3 * rhow * np.pi * D_pon**2 / 4 * L_pon
+A_14 = -6.372033E-05
+B_14 = 8.596341E-06
+
+A_15 = -9.169636E-03
+B_15 = -5.132704E-03
+
+A_16 = -3.080054E-04
+B_16 = -1.186330E-05
+
+A_21 = -2.008367E-05
+B_21 = -3.057829E-06
+
+A_22 = 5.560590E-02
+B_22 = 2.210978E-03
+
+A_23 = -1.055656E-04
+B_23 = -3.493670E-05
+
+A_24 = 9.174552E-03
+B_24 = 5.112958E-03
+
+A_25 = 1.697289E-04
+B_25 = 1.284567E-05
+
+A_26 = 2.934588E-02
+B_26 = 1.165033E-03
+
+A_31 = -2.603772E-05
+B_31 = -4.138772E-06
+
+A_32 = 3.898923E-05
+B_32 = -1.865739E-05
+
+A_33 = 2.146832E-01
+B_33 = 2.564832E-02
+
+A_34 = 2.401811E-04
+B_34 = -1.968197E-05
+
+A_35 = -1.128748E-01
+B_35 = -1.343221E-02
+
+A_36 = 4.926073E-05
+B_36 = -8.623978E-06
+
+A_41 = -2.543383E-05
+B_41 = 1.595529E-05
+
+A_42 = 9.242992E-03
+B_42 = 5.172351E-03
+
+A_43 = 2.271207E-04
+B_43 = -4.059940E-05
+
+A_44 = 1.369218E-01
+B_44 = 1.388470E-02
+
+A_45 = -6.450562E-04
+B_45 = -6.097537E-05
+
+A_46 = 4.884094E-03
+B_46 = 2.715711E-03
+
+A_51 = -9.199860E-03
+B_51 = -5.193248E-03
+
+A_52 = -2.805536E-05
+B_52 = -9.063330E-06
+
+A_53 = -1.128636E-01
+B_53 = -1.343558E-02
+
+A_54 = -6.670913E-04
+B_54 = -7.558007E-05
+
+A_55 = 1.973794E-01
+B_55 = 2.110879E-02
+
+A_56 = 1.026138E-05
+B_56 = 1.994684E-05
+
+A_61 = -3.145794E-04
+B_61 = -1.859963E-05
+
+A_62 = 2.934781E-02
+B_62 = 1.166714E-03
+
+A_63 = -1.035555E-04
+B_63 = -1.991955E-05
+
+A_64 = 4.862442E-03
+B_64 = 2.689108E-03
+
+A_65 = 3.318445E-04
+B_65 = 4.907719E-05
+
+A_66 = 7.633932E-02
+B_66 = 7.931603E-04
+
+A = np.array([[A_11, A_21, A_31, A_41, A_51, A_61],
+            [A_12, A_22, A_32, A_42, A_52, A_62],
+            [A_13, A_23, A_33, A_43, A_53, A_63],
+            [A_14, A_24, A_34, A_44, A_54, A_64],
+            [A_15, A_25, A_35, A_45, A_55, A_65],
+            [A_16, A_26, A_36, A_46, A_56, A_66]])
+
+B = np.array([[B_11, B_21, B_31, B_41, B_51, B_61],
+            [B_12, B_22, B_32, B_42, B_52, B_62],
+            [B_13, B_23, B_33, B_43, B_53, B_63],
+            [B_14, B_24, B_34, B_44, B_54, B_64],
+            [B_15, B_25, B_35, B_45, B_55, B_65],
+            [B_16, B_26, B_36, B_46, B_56, B_66]])
+
+# A = M
+
+# # Heave coupled components of added mass matrix changing because of heave plate
+# m_a_heave_plate = (1/3) * rhow * (D_hp**3) # For one heave plate 
+#                                            # (According to L.Tao et.al.--> Eq. 24)
+# m_a_total = 3 * m_a_heave_plate            # For three heave plates, assuming
+#                                            # that the heave plates are seperated
+#                                            # such that they don't interact with
+#                                            # each other
+
+# A33 = m_a_total                         # Heave-heave
+# A34 = m_a_total * (y_1 + y_2 + y_3)     # Heave-roll
+# A35 = - m_a_total * (x_1 + x_2 + x_3)   # Heave-pitch
+# A43 = A34                               # Roll-heave
+# A53 = A35                               # Pitch-heave
+
+# # Rewrite surge and sway components with columns and pontoons contribution
+# A11 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
+#       rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
+#       rhow * np.pi * D_pon**2 / 4 * L_pon * (1 + 2 * np.sin(np.deg2rad(60))**2)
+# A22 = 2 * rhow * np.pi * D_b**2 / 4 * (draft - h_hp) +\
+#       rhow * np.pi * D_f**2 / 4 * (draft - h_hp) +\
+#       rhow * np.pi * D_pon**2 / 4 * L_pon * (0 + 2 * np.sin(np.deg2rad(30))**2)
+# A33 += 3 * rhow * np.pi * D_pon**2 / 4 * L_pon
 
 
-A[2,2] = A33
-A[2,3] = A34
-A[2,4] = A35
-A[3,2] = A43
-A[4,2] = A53
+# A[2,2] = A33
+# A[2,3] = A34
+# A[2,4] = A35
+# A[3,2] = A43
+# A[4,2] = A53
 #%% DAMPING MATRIX
 
-B = np.zeros_like(M)
+# B = np.zeros_like(M)
 
 #%% MOMENTS OF WATERPLANE AREA
 
